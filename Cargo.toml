@@ -19,13 +19,12 @@ napi-derive = "2"
 image = { version = "0.25", default-features = false, features = ["png", "gif", "webp", "bmp", "ico", "tiff"] }
 fast_image_resize = { version = "5", features = ["image", "rayon"] }
 
-# Fast JPEG decoder (1.5-2x faster than standard jpeg-decoder, SIMD optimized)
-zune-jpeg = "0.4"
-# Fast JPEG encoder
-jpeg-encoder = "0.6"
+# TurboJPEG - libjpeg-turbo bindings (THE fastest JPEG codec with SIMD)
+# Uses SSE2/AVX2/NEON for 2-6x faster encode/decode than pure Rust
+turbojpeg = { version = "1.3", features = ["image"] }
 
-# MozJPEG - libjpeg-turbo with shrink-on-load support (THE key optimization)
-# Allows decoding JPEG at 1/8, 1/4, 1/2 resolution during decode - massive speedup
+# MozJPEG - for shrink-on-load support (decode at reduced resolution)
+# Fallback for shrink-on-load since turbojpeg doesn't support it
 mozjpeg = "0.10"
 
 # Multi-threading

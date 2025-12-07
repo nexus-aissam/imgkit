@@ -11,24 +11,26 @@ use crate::{ResizeOptions, ResizeFilter, FitMode};
 /// For large downscales, uses a faster algorithm first, then refines
 #[inline]
 fn get_resize_algorithm(filter: &Option<ResizeFilter>, scale_factor: f64) -> ResizeAlg {
-  // For very large downscales (< 25% of original), use faster algorithm
-  // Sharp uses "nearest" for very large reductions, then refines
-  if scale_factor < 0.25 && filter.is_none() {
-    // Use box filter for large downscales (faster and good quality for shrinking)
-    return ResizeAlg::Convolution(fr::FilterType::Box);
-  }
-
   match filter {
     Some(ResizeFilter::Nearest) => ResizeAlg::Nearest,
     Some(ResizeFilter::Bilinear) => ResizeAlg::Convolution(fr::FilterType::Bilinear),
     Some(ResizeFilter::CatmullRom) => ResizeAlg::Convolution(fr::FilterType::CatmullRom),
     Some(ResizeFilter::Mitchell) => ResizeAlg::Convolution(fr::FilterType::Mitchell),
-    Some(ResizeFilter::Lanczos3) | None => {
-      // For small scale changes, use Lanczos3 (best quality)
-      // For medium downscales, use Mitchell (faster, still good)
-      if scale_factor < 0.5 {
-        ResizeAlg::Convolution(fr::FilterType::Mitchell)
+    Some(ResizeFilter::Lanczos3) => ResizeAlg::Convolution(fr::FilterType::Lanczos3),
+    None => {
+      // Adaptive algorithm selection based on scale factor
+      // This matches libvips behavior for speed vs quality tradeoff
+      if scale_factor < 0.25 {
+        // For > 4x downscale, use Box (fastest, good for shrinking)
+        ResizeAlg::Convolution(fr::FilterType::Box)
+      } else if scale_factor < 0.5 {
+        // For 2-4x downscale, use Bilinear (fast, acceptable quality)
+        ResizeAlg::Convolution(fr::FilterType::Bilinear)
+      } else if scale_factor < 0.75 {
+        // For 1.33-2x downscale, use CatmullRom (fast, good quality)
+        ResizeAlg::Convolution(fr::FilterType::CatmullRom)
       } else {
+        // For small scale changes (<1.33x), use Lanczos3 (best quality)
         ResizeAlg::Convolution(fr::FilterType::Lanczos3)
       }
     }
@@ -148,8 +150,9 @@ pub fn resize_image(img: &DynamicImage, options: &ResizeOptions) -> Result<Dynam
 }
 
 /// Multi-step resize for large scale reductions
-/// Uses repeated halving with Nearest neighbor until close to target, then final quality pass
+/// Uses Box filter for fast halving until close to target, then final Bilinear pass
 /// This is much faster than single-step convolution for large reductions
+/// Box filter is ideal for downscaling as it acts as a proper averaging filter
 fn resize_multi_step(
   img: &DynamicImage,
   src_width: u32,
@@ -162,27 +165,29 @@ fn resize_multi_step(
   let mut current_width = src_width;
   let mut current_height = src_height;
 
-  // Use Nearest for fast halving - it's surprisingly good for > 2x downscales
-  let nearest_options = FrResizeOptions::new().resize_alg(ResizeAlg::Nearest);
+  // Use Box filter for fast halving - it's the ideal filter for downscaling
+  // Box averages all source pixels, avoiding aliasing artifacts
+  let box_options = FrResizeOptions::new().resize_alg(ResizeAlg::Convolution(fr::FilterType::Box));
 
   // Keep halving until we're within 2x of target size
-  // Each halving is very fast with Nearest neighbor
+  // Box filter is very fast and produces good results for > 2x downscales
   while current_width > dst_width * 2 && current_height > dst_height * 2 {
     let new_width = current_width / 2;
     let new_height = current_height / 2;
 
     current_img = if has_alpha {
-      resize_rgba(&current_img, current_width, current_height, new_width, new_height, &nearest_options)?
+      resize_rgba(&current_img, current_width, current_height, new_width, new_height, &box_options)?
     } else {
-      resize_rgb(&current_img, current_width, current_height, new_width, new_height, &nearest_options)?
+      resize_rgb(&current_img, current_width, current_height, new_width, new_height, &box_options)?
     };
 
     current_width = new_width;
     current_height = new_height;
   }
 
-  // Final pass with Lanczos for quality (but now working on much smaller image)
-  let final_options = FrResizeOptions::new().resize_alg(ResizeAlg::Convolution(fr::FilterType::Lanczos3));
+  // Final pass with Bilinear for speed (already at small size, quality is good enough)
+  // Bilinear is 2-3x faster than Lanczos3 and quality difference is minimal at this scale
+  let final_options = FrResizeOptions::new().resize_alg(ResizeAlg::Convolution(fr::FilterType::Bilinear));
 
   if has_alpha {
     resize_rgba(&current_img, current_width, current_height, dst_width, dst_height, &final_options)

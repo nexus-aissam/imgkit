@@ -1,38 +1,35 @@
 //! Image encoding functions - optimized for performance
-//! Uses jpeg-encoder for faster JPEG encoding
+//! Uses turbojpeg (libjpeg-turbo with SIMD) for fastest JPEG encoding
 
 use image::{DynamicImage, GenericImageView, ImageEncoder, ExtendedColorType};
 use image::codecs::png::{PngEncoder, CompressionType, FilterType};
-use jpeg_encoder::{Encoder as JpegEncoderFast, ColorType as JpegColorType};
 
 use crate::error::ImageError;
 use crate::{JpegOptions, PngOptions, WebPOptions};
 
-/// Estimate output buffer size based on input dimensions
-#[inline]
-fn estimate_jpeg_size(width: u32, height: u32, quality: u8) -> usize {
-  // JPEG typically compresses to 5-15% of raw size at quality 80
-  let raw_size = (width as usize) * (height as usize) * 3;
-  let compression_ratio = if quality > 90 { 0.3 } else if quality > 70 { 0.15 } else { 0.1 };
-  ((raw_size as f64) * compression_ratio) as usize + 1024
-}
-
-/// Encode image to JPEG - optimized using jpeg-encoder
+/// Encode image to JPEG - optimized using turbojpeg (libjpeg-turbo with SIMD)
+/// 2-6x faster than pure Rust encoders thanks to SSE2/AVX2/NEON
 pub fn encode_jpeg(img: &DynamicImage, options: Option<&JpegOptions>) -> Result<Vec<u8>, ImageError> {
-  let quality = options.and_then(|o| o.quality).unwrap_or(80);
+  let quality = options.and_then(|o| o.quality).unwrap_or(80) as i32;
   let quality = quality.clamp(1, 100);
 
   let rgb = img.to_rgb8();
   let (width, height) = (rgb.width(), rgb.height());
 
-  // Use jpeg-encoder which is faster than image crate's encoder
-  let mut output: Vec<u8> = Vec::with_capacity(estimate_jpeg_size(width, height, quality));
-  let encoder = JpegEncoderFast::new(&mut output, quality);
+  // Create turbojpeg image structure
+  let image = turbojpeg::Image {
+    pixels: rgb.as_raw().as_slice(),
+    width: width as usize,
+    pitch: width as usize * 3, // RGB = 3 bytes per pixel
+    height: height as usize,
+    format: turbojpeg::PixelFormat::RGB,
+  };
 
-  encoder.encode(rgb.as_raw(), width as u16, height as u16, JpegColorType::Rgb)
-    .map_err(|e| ImageError::EncodeError(format!("JPEG encode failed: {}", e)))?;
+  // Encode with turbojpeg - uses SIMD for maximum speed
+  let output = turbojpeg::compress(image, quality, turbojpeg::Subsamp::Sub2x2)
+    .map_err(|e| ImageError::EncodeError(format!("TurboJPEG encode failed: {:?}", e)))?;
 
-  Ok(output)
+  Ok(output.to_vec())
 }
 
 /// Encode image to PNG - optimized

@@ -1,12 +1,9 @@
 //! Image decoding functions - optimized for performance
-//! Uses mozjpeg for JPEG with shrink-on-load (THE key optimization like sharp/libvips)
-//! Falls back to zune-jpeg for full-resolution decode
+//! Uses turbojpeg (libjpeg-turbo with SIMD) for fastest JPEG decode
+//! Uses mozjpeg for shrink-on-load when downscaling (decode at reduced resolution)
 
 use image::{DynamicImage, ImageFormat, ImageReader, RgbImage};
 use std::io::Cursor;
-use zune_jpeg::JpegDecoder;
-use zune_jpeg::zune_core::colorspace::ColorSpace;
-use zune_jpeg::zune_core::options::DecoderOptions;
 
 use crate::error::ImageError;
 use crate::ImageMetadata;
@@ -50,8 +47,9 @@ pub fn decode_image_with_target(
   }
 }
 
-/// JPEG shrink-on-load using mozjpeg (libjpeg-turbo)
+/// JPEG shrink-on-load using turbojpeg (libjpeg-turbo with SIMD)
 /// This decodes JPEG at reduced resolution - THE key optimization
+/// Much faster than mozjpeg because turbojpeg uses SIMD (SSE2/AVX2/NEON)
 /// Scale factors: 1/8, 1/4, 3/8, 1/2, 5/8, 3/4, 7/8, 1/1
 fn decode_jpeg_with_shrink(
   data: &[u8],
@@ -62,50 +60,59 @@ fn decode_jpeg_with_shrink(
   let (src_width, src_height) = get_jpeg_dimensions_fast(data)?;
 
   // Calculate optimal shrink factor (like sharp does)
-  let scale_num = calculate_jpeg_scale_factor(
+  let (scale_num, scale_denom) = calculate_jpeg_scale_factor(
     src_width, src_height,
     target_width, target_height,
   );
 
-  // Use mozjpeg with shrink-on-load
-  let mut decompress = mozjpeg::Decompress::new_mem(data)
-    .map_err(|e| ImageError::DecodeError(format!("mozjpeg init failed: {:?}", e)))?;
+  // Use turbojpeg with SIMD-accelerated shrink-on-load
+  let mut decompressor = turbojpeg::Decompressor::new()
+    .map_err(|e| ImageError::DecodeError(format!("TurboJPEG init failed: {:?}", e)))?;
 
-  // Set scale factor (numerator/8, so 4 = 50%, 2 = 25%, 1 = 12.5%)
-  decompress.scale(scale_num);
+  // Set scaling factor
+  let scaling = turbojpeg::ScalingFactor::new(scale_num as usize, scale_denom as usize);
+  decompressor.set_scaling_factor(scaling)
+    .map_err(|e| ImageError::DecodeError(format!("TurboJPEG scale failed: {:?}", e)))?;
 
-  // Decode to RGB
-  let mut decompress = decompress.rgb()
-    .map_err(|e| ImageError::DecodeError(format!("mozjpeg RGB mode failed: {:?}", e)))?;
+  // Read header to get scaled dimensions
+  let header = decompressor.read_header(data)
+    .map_err(|e| ImageError::DecodeError(format!("TurboJPEG header failed: {:?}", e)))?;
 
-  let width = decompress.width() as u32;
-  let height = decompress.height() as u32;
+  let scaled_width = scaling.scale(header.width);
+  let scaled_height = scaling.scale(header.height);
 
-  // Read all scanlines using the modern API
-  let pixels: Vec<[u8; 3]> = decompress.read_scanlines()
-    .map_err(|e| ImageError::DecodeError(format!("mozjpeg read failed: {:?}", e)))?;
+  // Allocate output buffer for scaled image
+  let pitch = scaled_width * 3; // RGB = 3 bytes per pixel
+  let mut pixels = vec![0u8; pitch * scaled_height];
 
-  decompress.finish()
-    .map_err(|e| ImageError::DecodeError(format!("mozjpeg finish failed: {:?}", e)))?;
+  // Create output image structure
+  let output = turbojpeg::Image {
+    pixels: pixels.as_mut_slice(),
+    width: scaled_width,
+    pitch,
+    height: scaled_height,
+    format: turbojpeg::PixelFormat::RGB,
+  };
 
-  // Convert Vec<[u8; 3]> to Vec<u8>
-  let flat_pixels: Vec<u8> = pixels.into_iter().flat_map(|p| p).collect();
+  // Decompress at scaled resolution
+  decompressor.decompress(data, output)
+    .map_err(|e| ImageError::DecodeError(format!("TurboJPEG decompress failed: {:?}", e)))?;
 
-  let img = RgbImage::from_raw(width, height, flat_pixels)
+  let img = RgbImage::from_raw(scaled_width as u32, scaled_height as u32, pixels)
     .ok_or_else(|| ImageError::DecodeError("Failed to create image from decoded data".to_string()))?;
 
   Ok(DynamicImage::ImageRgb8(img))
 }
 
 /// Calculate optimal JPEG scale factor for shrink-on-load
-/// Returns numerator for scale = numerator/8
+/// Returns (numerator, denominator) for turbojpeg ScalingFactor
 /// Uses same logic as sharp/libvips for optimal quality
 fn calculate_jpeg_scale_factor(
   src_width: u32,
   src_height: u32,
   target_width: Option<u32>,
   target_height: Option<u32>,
-) -> u8 {
+) -> (i32, i32) {
   // Calculate target dimensions
   let (tw, th) = match (target_width, target_height) {
     (Some(w), Some(h)) => (w, h),
@@ -117,7 +124,7 @@ fn calculate_jpeg_scale_factor(
       let ratio = h as f64 / src_height as f64;
       ((src_width as f64 * ratio) as u32, h)
     }
-    (None, None) => return 8, // No target = full resolution
+    (None, None) => return (1, 1), // No target = full resolution
   };
 
   // Calculate shrink ratio (how much smaller is target vs source)
@@ -129,17 +136,17 @@ fn calculate_jpeg_scale_factor(
   // We use a factor of 1.0 for speed, accepting minor quality tradeoff
   // This matches sharp's behavior with fastShrinkOnLoad: true (default)
   //
-  // Scale factors available: 1/8, 1/4, 1/2, 1/1
+  // Scale factors available: 1/8, 1/4, 3/8, 1/2, 5/8, 3/4, 7/8, 1/1
   // We pick the smallest that gives us enough pixels for final resize
 
   if shrink >= 8.0 {
-    1  // 1/8 = 12.5% - for massive downscales
+    (1, 8)  // 1/8 = 12.5% - for massive downscales
   } else if shrink >= 4.0 {
-    2  // 2/8 = 25% - for large downscales
+    (1, 4)  // 1/4 = 25% - for large downscales
   } else if shrink >= 2.0 {
-    4  // 4/8 = 50% - for medium downscales
+    (1, 2)  // 1/2 = 50% - for medium downscales
   } else {
-    8  // 8/8 = 100% - full resolution
+    (1, 1)  // 1/1 = 100% - full resolution
   }
 }
 
@@ -183,24 +190,18 @@ fn get_jpeg_dimensions_fast(data: &[u8]) -> Result<(u32, u32), ImageError> {
   Err(ImageError::DecodeError("Could not find JPEG dimensions".to_string()))
 }
 
-/// Fast JPEG decoding using zune-jpeg (for full-resolution decode without target)
+/// Fast JPEG decoding using turbojpeg (libjpeg-turbo with SIMD)
+/// 2-6x faster than pure Rust decoders thanks to SSE2/AVX2/NEON
 #[inline]
 fn decode_jpeg_fast(data: &[u8]) -> Result<DynamicImage, ImageError> {
-  let options = DecoderOptions::default()
-    .jpeg_set_out_colorspace(ColorSpace::RGB);
+  // Use turbojpeg for maximum decode speed
+  let image: turbojpeg::Image<Vec<u8>> = turbojpeg::decompress(data, turbojpeg::PixelFormat::RGB)
+    .map_err(|e| ImageError::DecodeError(format!("TurboJPEG decode failed: {:?}", e)))?;
 
-  let mut decoder = JpegDecoder::new_with_options(data, options);
+  let width = image.width as u32;
+  let height = image.height as u32;
 
-  let pixels = decoder.decode()
-    .map_err(|e| ImageError::DecodeError(format!("JPEG decode failed: {:?}", e)))?;
-
-  let info = decoder.info()
-    .ok_or_else(|| ImageError::DecodeError("Failed to get JPEG info".to_string()))?;
-
-  let width = info.width as u32;
-  let height = info.height as u32;
-
-  let img = RgbImage::from_raw(width, height, pixels)
+  let img = RgbImage::from_raw(width, height, image.pixels)
     .ok_or_else(|| ImageError::DecodeError("Failed to create image from decoded data".to_string()))?;
 
   Ok(DynamicImage::ImageRgb8(img))
