@@ -20,21 +20,21 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             build: |
-              yarn build --target x86_64-apple-darwin
+              npm run build -- --target x86_64-apple-darwin
               strip -x *.node
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
-              yarn build --target aarch64-apple-darwin
+              npm run build -- --target aarch64-apple-darwin
               strip -x *.node
 
           # Windows
           - host: windows-latest
             target: x86_64-pc-windows-msvc
-            build: yarn build --target x86_64-pc-windows-msvc
+            build: npm run build -- --target x86_64-pc-windows-msvc
           - host: windows-latest
             target: aarch64-pc-windows-msvc
-            build: yarn build --target aarch64-pc-windows-msvc
+            build: npm run build -- --target aarch64-pc-windows-msvc
 
           # Linux glibc
           - host: ubuntu-latest
@@ -42,14 +42,14 @@ jobs:
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: |
               set -e
-              yarn build --target x86_64-unknown-linux-gnu
+              npm run build -- --target x86_64-unknown-linux-gnu
               strip *.node
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
             build: |
               set -e
-              yarn build --target aarch64-unknown-linux-gnu
+              npm run build -- --target aarch64-unknown-linux-gnu
               aarch64-linux-gnu-strip *.node
 
           # Linux musl (Alpine)
@@ -58,7 +58,7 @@ jobs:
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
               set -e
-              yarn build --target x86_64-unknown-linux-musl
+              npm run build -- --target x86_64-unknown-linux-musl
               strip *.node
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
@@ -66,7 +66,7 @@ jobs:
             build: |
               set -e
               rustup target add aarch64-unknown-linux-musl
-              yarn build --target aarch64-unknown-linux-musl
+              npm run build -- --target aarch64-unknown-linux-musl
               /aarch64-linux-musl-cross/bin/aarch64-linux-musl-strip *.node
 
     name: Build - ${{ matrix.settings.target }}
@@ -89,7 +89,7 @@ jobs:
 
       - name: Install dependencies
         if: ${{ !matrix.settings.docker }}
-        run: yarn install --ignore-optional
+        run: npm install --ignore-scripts --no-optional
 
       - name: Build
         if: ${{ !matrix.settings.docker }}
@@ -103,7 +103,7 @@ jobs:
           image: ${{ matrix.settings.docker }}
           options: --user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build
           run: |
-            yarn install --ignore-optional
+            npm install --ignore-scripts --no-optional
             ${{ matrix.settings.build }}
 
       - name: Upload artifact
@@ -128,7 +128,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies
-        run: yarn install --ignore-optional
+        run: npm install --ignore-scripts --no-optional
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -136,13 +136,13 @@ jobs:
           path: artifacts
 
       - name: Move artifacts
-        run: yarn artifacts
+        run: npm run artifacts
 
       - name: List packages
         run: ls -R npm/
 
       - name: Build TypeScript
-        run: yarn build:ts
+        run: npm run build:ts
 
       - name: Publish
         run: |
