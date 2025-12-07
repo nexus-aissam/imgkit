@@ -89,22 +89,26 @@ function loadNativeBinding() {
       }
       break;
     case "win32":
-      targetName = "win32-x64-msvc";
+      targetName = arch === "arm64" ? "win32-arm64-msvc" : "win32-x64-msvc";
       break;
     default:
       throw new Error(`Unsupported platform: ${platform}-${arch}`);
   }
 
   const currentDir = getCurrentDir();
+  const binaryName = `image-turbo.${targetName}.node`;
+  const optionalPackageName = `bun-image-turbo-${targetName}`;
 
   // Try loading from different locations
   const possiblePaths = [
     // Same directory as this file (dist/)
-    join(currentDir, `image-turbo.${targetName}.node`),
+    join(currentDir, binaryName),
     // Parent directory (package root)
-    join(currentDir, "..", `image-turbo.${targetName}.node`),
+    join(currentDir, "..", binaryName),
+    // Optional dependency package (installed in node_modules)
+    join(currentDir, "..", "..", optionalPackageName, binaryName),
     // CWD (development)
-    join(process.cwd(), `image-turbo.${targetName}.node`),
+    join(process.cwd(), binaryName),
   ];
 
   for (const modulePath of possiblePaths) {
@@ -115,6 +119,13 @@ function loadNativeBinding() {
     } catch {
       continue;
     }
+  }
+
+  // Try requiring the optional package directly (Bun/Node resolution)
+  try {
+    return require(optionalPackageName);
+  } catch {
+    // Ignore and fall through to error
   }
 
   throw new Error(
