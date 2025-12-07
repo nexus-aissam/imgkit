@@ -40,7 +40,6 @@
     "build:ts": "tsup src/index.ts --format cjs,esm --dts --clean",
     "build:all": "bun run build && bun run build:ts",
     "artifacts": "napi artifacts",
-    "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version",
     "test": "bun test",
     "bench": "bun run benchmarks/bench.ts",
