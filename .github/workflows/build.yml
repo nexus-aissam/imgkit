@@ -162,7 +162,7 @@ jobs:
         run: ls -R artifacts/
 
       - name: Create npm package directories
-        run: npx napi create-npm-dirs
+        run: npx napi create-npm-dir
 
       - name: Move artifacts to npm packages
         run: |
