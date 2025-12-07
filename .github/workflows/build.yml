@@ -158,6 +158,16 @@ jobs:
         with:
           path: artifacts
 
+      - name: List downloaded artifacts
+        run: ls -R artifacts/
+
+      - name: Move artifacts to root
+        run: |
+          for dir in artifacts/*/; do
+            mv "$dir"*.node . 2>/dev/null || true
+          done
+          ls -la *.node
+
       - name: Create npm directories
         run: npm run artifacts
 
