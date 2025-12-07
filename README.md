@@ -3,7 +3,11 @@
 High-performance image processing for Bun and Node.js, built with Rust and napi-rs.
 
 [![npm version](https://badge.fury.io/js/bun-image-turbo.svg)](https://www.npmjs.com/package/bun-image-turbo)
+[![Build & Publish](https://github.com/nexus-aissam/bun-image-turbo/actions/workflows/build.yml/badge.svg)](https://github.com/nexus-aissam/bun-image-turbo/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Bun](https://img.shields.io/badge/Bun-1.0+-orange.svg)](https://bun.sh/)
 
 ## Features
 
