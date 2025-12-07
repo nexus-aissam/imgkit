@@ -1,0 +1,53 @@
+[package]
+name = "image-turbo"
+version = "0.0.1-beta"
+edition = "2021"
+license = "MIT"
+authors = ["Aissam Irhir <aissamirhir@gmail.com>"]
+description = "High-performance image processing for Bun and Node.js"
+
+[lib]
+crate-type = ["cdylib"]
+path = "rust/src/lib.rs"
+
+[dependencies]
+# napi-rs bindings
+napi = { version = "2", features = ["async", "napi8"] }
+napi-derive = "2"
+
+# Image processing
+image = { version = "0.25", default-features = false, features = ["png", "gif", "webp", "bmp", "ico", "tiff"] }
+fast_image_resize = { version = "5", features = ["image", "rayon"] }
+
+# Fast JPEG decoder (1.5-2x faster than standard jpeg-decoder, SIMD optimized)
+zune-jpeg = "0.4"
+# Fast JPEG encoder
+jpeg-encoder = "0.6"
+
+# MozJPEG - libjpeg-turbo with shrink-on-load support (THE key optimization)
+# Allows decoding JPEG at 1/8, 1/4, 1/2 resolution during decode - massive speedup
+mozjpeg = "0.10"
+
+# Multi-threading
+rayon = "1.10"
+
+# WebP support
+webp = "0.3"
+
+# Async runtime
+tokio = { version = "1", features = ["rt", "sync"] }
+
+# Error handling
+thiserror = "2"
+
+# For blurhash generation
+blurhash = "0.2"
+
+[build-dependencies]
+napi-build = "2"
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+strip = "symbols"

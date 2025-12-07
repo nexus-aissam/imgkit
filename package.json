@@ -1,0 +1,87 @@
+{
+  "name": "bun-image-turbo",
+  "version": "0.0.1-beta",
+  "description": "High-performance image processing for Bun and Node.js - resize, convert, compress with WebP, AVIF, PNG, JPEG support",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "napi": {
+    "name": "image-turbo",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "aarch64-apple-darwin",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-unknown-linux-musl"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "build:ts": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build:all": "bun run build && bun run build:ts",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "bun test",
+    "bench": "bun run benchmarks/bench.ts",
+    "lint": "eslint src",
+    "clean": "rm -rf dist *.node npm"
+  },
+  "keywords": [
+    "image",
+    "resize",
+    "compress",
+    "webp",
+    "avif",
+    "png",
+    "jpeg",
+    "jpg",
+    "gif",
+    "thumbnail",
+    "crop",
+    "convert",
+    "processing",
+    "bun",
+    "nodejs",
+    "rust",
+    "napi",
+    "native",
+    "fast",
+    "turbo"
+  ],
+  "author": "Aissam Irhir <aissamirhir@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexus-aissam/bun-image-turbo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nexus-aissam/bun-image-turbo/issues"
+  },
+  "homepage": "https://github.com/nexus-aissam/bun-image-turbo#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4",
+    "@types/bun": "latest",
+    "sharp": "^0.34.5",
+    "tsup": "^8.4.0",
+    "typescript": "^5.9.0"
+  }
+}
