@@ -89,7 +89,7 @@ jobs:
 
       - name: Install dependencies
         if: ${{ !matrix.settings.docker }}
-        run: yarn install
+        run: yarn install --ignore-optional
 
       - name: Build
         if: ${{ !matrix.settings.docker }}
@@ -103,7 +103,7 @@ jobs:
           image: ${{ matrix.settings.docker }}
           options: --user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build
           run: |
-            yarn install
+            yarn install --ignore-optional
             ${{ matrix.settings.build }}
 
       - name: Upload artifact
@@ -128,7 +128,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --ignore-optional
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
