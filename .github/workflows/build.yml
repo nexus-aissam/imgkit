@@ -247,21 +247,24 @@ jobs:
         run: |
           npm config set provenance true
 
+          # Determine tag based on version
+          if [[ "${{ github.ref }}" == *"beta"* ]] || [[ "${{ github.ref }}" == *"alpha"* ]]; then
+            NPM_TAG="beta"
+          else
+            NPM_TAG="latest"
+          fi
+          echo "Publishing with tag: $NPM_TAG"
+
           # Publish platform packages first
           for pkg in npm/*/; do
             if [ -d "$pkg" ] && [ -f "$pkg/package.json" ]; then
               echo "Publishing $pkg"
-              (cd "$pkg" && npm publish --access public --tag beta) || true
+              (cd "$pkg" && npm publish --access public --tag $NPM_TAG) || true
             fi
           done
 
           # Publish main package
-          if [[ "${{ github.ref }}" == *"beta"* ]] || [[ "${{ github.ref }}" == *"alpha"* ]]; then
-            echo "Publishing main package with beta tag"
-            npm publish --access public --tag beta
-          else
-            echo "Publishing main package with latest tag"
-            npm publish --access public
-          fi
+          echo "Publishing main package with $NPM_TAG tag"
+          npm publish --access public --tag $NPM_TAG
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
