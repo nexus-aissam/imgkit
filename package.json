@@ -1,6 +1,6 @@
 {
   "name": "bun-image-turbo",
-  "version": "0.0.2-beta",
+  "version": "1.0.1-beta",
   "description": "High-performance image processing for Bun and Node.js - resize, convert, compress with WebP, AVIF, PNG, JPEG support",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -89,13 +89,13 @@
     "typescript": "^5.9.0"
   },
   "optionalDependencies": {
-    "bun-image-turbo-darwin-arm64": "0.0.2-beta",
-    "bun-image-turbo-darwin-x64": "0.0.2-beta",
-    "bun-image-turbo-linux-x64-gnu": "0.0.2-beta",
-    "bun-image-turbo-linux-x64-musl": "0.0.2-beta",
-    "bun-image-turbo-linux-arm64-gnu": "0.0.2-beta",
-    "bun-image-turbo-linux-arm64-musl": "0.0.2-beta",
-    "bun-image-turbo-win32-x64-msvc": "0.0.2-beta",
-    "bun-image-turbo-win32-arm64-msvc": "0.0.2-beta"
+    "bun-image-turbo-darwin-arm64": "1.0.1-beta",
+    "bun-image-turbo-darwin-x64": "1.0.1-beta",
+    "bun-image-turbo-linux-x64-gnu": "1.0.1-beta",
+    "bun-image-turbo-linux-x64-musl": "1.0.1-beta",
+    "bun-image-turbo-linux-arm64-gnu": "1.0.1-beta",
+    "bun-image-turbo-linux-arm64-musl": "1.0.1-beta",
+    "bun-image-turbo-win32-x64-msvc": "1.0.1-beta",
+    "bun-image-turbo-win32-arm64-msvc": "1.0.1-beta"
   }
 }
