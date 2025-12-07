@@ -167,19 +167,13 @@ jobs:
       - name: List downloaded artifacts
         run: ls -R artifacts/
 
-      - name: Move and rename artifacts
+      - name: Move artifacts to root
         run: |
           echo "=== Downloaded artifacts ==="
           find artifacts -name "*.node" -type f
 
-          # Move and rename from index.*.node to image-turbo.*.node
-          for f in artifacts/*/index.*.node; do
-            if [ -f "$f" ]; then
-              newname=$(basename "$f" | sed 's/^index\./image-turbo./')
-              cp "$f" "./$newname"
-              echo "Copied $f -> ./$newname"
-            fi
-          done
+          # Copy all .node files to root directory
+          find artifacts -name "*.node" -exec cp {} . \;
 
           echo "=== Files in root ==="
           ls -la *.node
