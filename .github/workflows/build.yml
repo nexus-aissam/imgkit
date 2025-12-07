@@ -69,8 +69,9 @@ jobs:
               set -e
               apk add --no-cache nodejs npm nasm cmake make gcc g++ musl-dev libc-dev curl bash perl linux-headers
               curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-              export PATH="$HOME/.cargo/bin:$PATH"
-              npm run build -- --target x86_64-unknown-linux-musl
+              . "$HOME/.cargo/env"
+              npm install --ignore-scripts
+              ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-musl
               strip *.node
 
           # Linux musl aarch64 - skip for now (complex cross-compilation)
