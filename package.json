@@ -36,7 +36,9 @@
     "build:debug": "napi build --platform",
     "build:ts": "tsup src/index.ts --format cjs,esm --dts --clean",
     "build:all": "bun run build && bun run build:ts",
+    "artifacts": "napi artifacts",
     "prepublishOnly": "napi prepublish -t npm",
+    "version": "napi version",
     "test": "bun test",
     "bench": "bun run benchmarks/bench.ts",
     "lint": "eslint src",
@@ -83,5 +85,13 @@
     "sharp": "^0.34.5",
     "tsup": "^8.4.0",
     "typescript": "^5.9.0"
+  },
+  "optionalDependencies": {
+    "bun-image-turbo-win32-x64-msvc": "0.0.2-beta",
+    "bun-image-turbo-darwin-x64": "0.0.2-beta",
+    "bun-image-turbo-linux-x64-gnu": "0.0.2-beta",
+    "bun-image-turbo-darwin-arm64": "0.0.2-beta",
+    "bun-image-turbo-linux-arm64-gnu": "0.0.2-beta",
+    "bun-image-turbo-linux-arm64-musl": "0.0.2-beta"
   }
 }
