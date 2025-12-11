@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          # macOS (with HEIC support)
+          # macOS x86_64 (no HEIC - cross-compilation doesn't work with pkg-config)
           - host: macos-latest
             target: x86_64-apple-darwin
             build: |
@@ -30,8 +30,10 @@ jobs:
               export CMAKE_ASM_NASM_COMPILER="$NASM_PATH/nasm"
               echo "NASM at: $(which nasm)"
               nasm --version
-              ./node_modules/.bin/napi build --platform --release --target x86_64-apple-darwin --features heic
+              ./node_modules/.bin/napi build --platform --release --target x86_64-apple-darwin
               strip -x *.node
+
+          # macOS ARM64 (with HEIC support - native build)
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
@@ -52,49 +54,49 @@ jobs:
             target: aarch64-pc-windows-msvc
             build: ./node_modules/.bin/napi build --platform --release --target aarch64-pc-windows-msvc
 
-          # Linux glibc x86_64 (with HEIC support)
+          # Linux glibc x86_64 (no HEIC - distro libheif too old)
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             docker: node:20-bookworm
             build: |
               set -e
-              apt-get update && apt-get install -y nasm cmake libheif-dev pkg-config build-essential
+              apt-get update && apt-get install -y nasm cmake pkg-config build-essential
               # Install latest stable Rust (need 1.85+ for moxcms crate)
               curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
               . "$HOME/.cargo/env"
               rustc --version
               cargo --version
               npm install --ignore-scripts
-              ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-gnu --features heic
+              ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-gnu
               strip *.node
 
-          # Linux glibc aarch64 (native ARM64 runner, with HEIC support)
+          # Linux glibc aarch64 (no HEIC - distro libheif too old)
           - host: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             setup: |
               sudo apt-get update
-              sudo apt-get install -y nasm cmake libheif-dev pkg-config
+              sudo apt-get install -y nasm cmake pkg-config
               # Ensure latest Rust
               rustup default stable
               rustup update
             build: |
-              ./node_modules/.bin/napi build --platform --release --target aarch64-unknown-linux-gnu --features heic
+              ./node_modules/.bin/napi build --platform --release --target aarch64-unknown-linux-gnu
               strip *.node
 
-          # Linux musl x86_64 - native build in Alpine container (with HEIC support)
+          # Linux musl x86_64 (no HEIC - Alpine libheif too old)
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             docker: node:20-alpine
             build: |
               set -e
-              apk add --no-cache nasm cmake make gcc g++ musl-dev libc-dev curl bash perl linux-headers libheif-dev pkgconfig
+              apk add --no-cache nasm cmake make gcc g++ musl-dev libc-dev curl bash perl linux-headers pkgconfig
               # Install latest stable Rust (need 1.85+ for moxcms crate)
               curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
               . "$HOME/.cargo/env"
               rustc --version
               cargo --version
               npm install --ignore-scripts
-              ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-musl --features heic
+              ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-musl
               strip *.node
 
           # Linux musl aarch64 - skip for now (complex cross-compilation)
