@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-12-12
+
+### Documentation
+
+- **New Architecture Guide** - Deep dive into tech stack, processing pipeline, and key optimizations
+- **Fixed resize() documentation** - Clarified that output is always PNG format
+- **Fixed transform() documentation** - `output` is optional (defaults to PNG), added GIF/BMP examples
+- **Fixed formats guide** - Removed non-existent `toGif()`, use `transform()` instead
+- **Enhanced performance guide** - Added technical details about shrink-on-decode, multi-step resize, and adaptive algorithm selection
+- **Updated API reference** - Added `version()` function documentation
+- **Fixed platform support tables** - All platforms are supported, HEIC only on macOS ARM64
+- **Added VitePress documentation site** - Professional docs with GitHub Pages deployment
+
+### Fixed
+
+- ESM module configuration for VitePress 1.6+
+
+---
+
 ## [1.2.0] - 2025-12-11
 
 ### Added

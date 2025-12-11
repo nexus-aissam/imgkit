@@ -1,103 +1,105 @@
 /**
- * HEIC Conversion Example
+ * HEIC/HEIF Conversion Examples
  *
- * This example demonstrates how to work with HEIC/HEIF files
- * (commonly used by iPhones) using bun-image-turbo.
+ * HEIC support is only available on macOS ARM64 (Apple Silicon)
  */
 
 import {
   metadata,
   toJpeg,
-  toPng,
   toWebp,
-  resize,
+  toPng,
   transform,
-} from "../src/index";
+  version
+} from 'bun-image-turbo';
 
 async function main() {
-  // Example: Read a HEIC file
-  // Default to the benchmark HEIC file if no argument provided
-  const heicPath = process.argv[2] || "./benchmarks/heic/image.heic";
+  console.log(`bun-image-turbo v${version()}`);
+  console.log('HEIC Conversion Examples\n');
 
-  console.log(`\n📱 HEIC Conversion Demo`);
-  console.log(`========================\n`);
+  // Check if HEIC file exists
+  const heicFile = Bun.file('./image.heic');
+  if (!(await heicFile.exists())) {
+    console.log('No image.heic found in current directory.');
+    console.log('Please provide a HEIC file to test.\n');
+    return;
+  }
+
+  const heicBuffer = Buffer.from(await heicFile.arrayBuffer());
+  console.log(`HEIC file size: ${(heicBuffer.length / 1024).toFixed(2)} KB\n`);
 
   try {
-    const file = Bun.file(heicPath);
-
-    if (!(await file.exists())) {
-      console.log(`⚠️  File not found: ${heicPath}`);
-      console.log(
-        `\nUsage: bun run examples/heic-conversion.ts <path-to-heic-file>`
-      );
-      console.log(`\nExample:`);
-      console.log(
-        `  bun run examples/heic-conversion.ts ~/Pictures/IMG_1234.HEIC`
-      );
-      return;
-    }
-
-    const heicBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(heicBuffer);
-
-    // 1. Get metadata
-    console.log("📊 Getting metadata...");
-    const info = await metadata(buffer);
-    console.log(`   Format: ${info.format}`);
-    console.log(`   Dimensions: ${info.width}x${info.height}`);
-    console.log(`   Channels: ${info.channels}`);
-    console.log(`   Has Alpha: ${info.hasAlpha}`);
-    console.log(`   Bit Depth: ${info.bitsPerSample}`);
+    // 1. Get Metadata
+    console.log('=== HEIC Metadata ===');
+    const meta = await metadata(heicBuffer);
+    console.log(`Dimensions: ${meta.width}x${meta.height}`);
+    console.log(`Format: ${meta.format}`);
+    console.log(`Color Space: ${meta.space}`);
+    console.log(`Channels: ${meta.channels}\n`);
 
     // 2. Convert to JPEG
-    console.log("\n🔄 Converting to JPEG...");
-    const jpeg = await toJpeg(buffer, { quality: 90 });
-    await Bun.write("output.jpg", jpeg);
-    console.log(
-      `   ✅ Saved: output.jpg (${(jpeg.length / 1024).toFixed(1)} KB)`
-    );
+    console.log('=== Convert to JPEG ===');
+    const jpeg = await toJpeg(heicBuffer, { quality: 85 });
+    await Bun.write('./output/heic-to-jpeg.jpg', jpeg);
+    console.log(`JPEG: ${(jpeg.length / 1024).toFixed(2)} KB\n`);
 
-    // 3. Convert to PNG
-    console.log("\n🔄 Converting to PNG...");
-    const png = await toPng(buffer);
-    await Bun.write("output.png", png);
-    console.log(
-      `   ✅ Saved: output.png (${(png.length / 1024).toFixed(1)} KB)`
-    );
+    // 3. Convert to WebP
+    console.log('=== Convert to WebP ===');
+    const webp = await toWebp(heicBuffer, { quality: 80 });
+    await Bun.write('./output/heic-to-webp.webp', webp);
+    console.log(`WebP: ${(webp.length / 1024).toFixed(2)} KB\n`);
 
-    // 4. Convert to WebP
-    console.log("\n🔄 Converting to WebP...");
-    const webp = await toWebp(buffer, { quality: 85 });
-    await Bun.write("output.webp", webp);
-    console.log(
-      `   ✅ Saved: output.webp (${(webp.length / 1024).toFixed(1)} KB)`
-    );
+    // 4. Convert to PNG
+    console.log('=== Convert to PNG ===');
+    const png = await toPng(heicBuffer);
+    await Bun.write('./output/heic-to-png.png', png);
+    console.log(`PNG: ${(png.length / 1024).toFixed(2)} KB\n`);
 
-    // 5. Create thumbnail
-    console.log("\n🖼️  Creating thumbnail...");
-    const thumbnail = await resize(buffer, { width: 200 });
-    const thumbJpeg = await toJpeg(thumbnail, { quality: 80 });
-    await Bun.write("thumbnail.jpg", thumbJpeg);
-    const thumbInfo = await metadata(thumbnail);
-    console.log(
-      `   ✅ Saved: thumbnail.jpg (${thumbInfo.width}x${thumbInfo.height})`
-    );
-
-    // 6. Full transform pipeline
-    console.log("\n🎨 Applying transformations...");
-    const transformed = await transform(buffer, {
-      resize: { width: 800 },
-      grayscale: true,
-      sharpen: 10,
-      output: { format: "webp", webp: { quality: 80 } },
+    // 5. Resize and Convert
+    console.log('=== Resize and Convert ===');
+    const resized = await transform(heicBuffer, {
+      resize: { width: 1200, height: 800, fit: 'inside' },
+      output: { format: 'jpeg', jpeg: { quality: 85 } }
     });
-    await Bun.write("transformed.webp", transformed);
-    console.log(`   ✅ Saved: transformed.webp (grayscale, sharpened)`);
+    await Bun.write('./output/heic-resized.jpg', resized);
+    console.log(`Resized: ${(resized.length / 1024).toFixed(2)} KB\n`);
 
-    console.log("\n✨ Done! All conversions complete.\n");
-  } catch (error) {
-    console.error("❌ Error:", error);
+    // 6. Web-optimized versions
+    console.log('=== Web-optimized Versions ===');
+
+    const large = await transform(heicBuffer, {
+      resize: { width: 1920 },
+      output: { format: 'webp', webp: { quality: 85 } }
+    });
+    await Bun.write('./output/heic-large.webp', large);
+    console.log(`Large (1920w): ${(large.length / 1024).toFixed(2)} KB`);
+
+    const medium = await transform(heicBuffer, {
+      resize: { width: 800 },
+      output: { format: 'webp', webp: { quality: 80 } }
+    });
+    await Bun.write('./output/heic-medium.webp', medium);
+    console.log(`Medium (800w): ${(medium.length / 1024).toFixed(2)} KB`);
+
+    const thumb = await transform(heicBuffer, {
+      resize: { width: 200, height: 200, fit: 'cover' },
+      output: { format: 'webp', webp: { quality: 70 } }
+    });
+    await Bun.write('./output/heic-thumb.webp', thumb);
+    console.log(`Thumbnail: ${(thumb.length / 1024).toFixed(2)} KB\n`);
+
+    console.log('All HEIC examples completed! Check ./output folder');
+  } catch (error: any) {
+    if (error.message?.includes('HEIC') || error.message?.includes('Unsupported')) {
+      console.error('HEIC support is not available on this platform.');
+      console.error('HEIC is only supported on macOS ARM64 (Apple Silicon).');
+    } else {
+      throw error;
+    }
   }
 }
 
-main();
+// Create output directory
+await Bun.write('./output/.gitkeep', '');
+
+main().catch(console.error);

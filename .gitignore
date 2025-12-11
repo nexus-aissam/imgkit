@@ -27,3 +27,6 @@ test/fixtures/output.*
 
 # Cargo
 Cargo.lock
+
+examples/output
+examples/input

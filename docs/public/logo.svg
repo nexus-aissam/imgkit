@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Outer circle -->
+  <circle cx="50" cy="50" r="45" fill="url(#grad)" />
+  <!-- Image icon -->
+  <rect x="25" y="30" width="50" height="40" rx="4" fill="white" opacity="0.95"/>
+  <!-- Mountain shapes -->
+  <polygon points="30,60 45,45 55,55 70,38 70,65 30,65" fill="#f97316"/>
+  <!-- Sun -->
+  <circle cx="60" cy="40" r="6" fill="#fbbf24"/>
+  <!-- Lightning bolt for "turbo" -->
+  <path d="M78,20 L72,35 L80,35 L70,55 L76,40 L68,40 Z" fill="#fbbf24"/>
+</svg>

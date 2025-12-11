@@ -1,0 +1,14 @@
+{
+  "name": "bun-image-turbo-examples",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "basic": "bun run basic-usage.ts",
+    "heic": "bun run heic-conversion.ts",
+    "api": "bun run api-endpoint.ts",
+    "batch": "bun run batch-processing.ts"
+  },
+  "dependencies": {
+    "bun-image-turbo": "latest"
+  }
+}

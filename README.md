@@ -9,50 +9,42 @@ High-performance image processing for Bun and Node.js, built with Rust and napi-
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.0+-orange.svg)](https://bun.sh/)
 
+## Why bun-image-turbo?
+
+Built from the ground up for **maximum performance**, bun-image-turbo uses native Rust with carefully optimized codepaths:
+
+| Component | Technology | Benefit |
+|-----------|------------|---------|
+| **JPEG Codec** | TurboJPEG (libjpeg-turbo) | SIMD acceleration (SSE2/AVX2/NEON) |
+| **Resize Engine** | fast_image_resize + Rayon | Multi-threaded with adaptive algorithms |
+| **WebP Codec** | libwebp bindings | Google's optimized encoder/decoder |
+| **HEIC Decoder** | libheif-rs | Native Apple format support |
+| **Node Bindings** | napi-rs | Zero-copy buffer handling |
+
 ## Features
 
-- **Fast** - Built with Rust for maximum performance
-- **Modern Formats** - JPEG, PNG, WebP, GIF, BMP, **HEIC/HEIF** support
-- **HEIC Support** - Read iPhone photos and HEIC/HEIF files natively
-- **Resize** - High-quality resizing with multiple algorithms (Lanczos3, Mitchell, etc.)
-- **Transform** - Rotate, flip, blur, sharpen, grayscale, brightness, contrast
-- **Blurhash** - Generate compact image placeholders
-- **Async & Sync** - Both async and sync APIs available
-- **TypeScript** - Full TypeScript support with strict types
-- **Cross-platform** - macOS, Linux, Windows support
+- **TurboJPEG with SIMD** - 2-6x faster JPEG encoding/decoding via libjpeg-turbo
+- **Shrink-on-Decode** - Decode JPEG/HEIC at reduced resolution for faster thumbnails
+- **Adaptive Algorithms** - Auto-selects optimal resize filter based on scale factor
+- **Native HEIC Support** - The only high-performance library with HEIC/HEIF decoding
+- **Blurhash Generation** - Built-in compact placeholder generation
+- **Multi-Step Resize** - Progressive halving for large scale reductions
+- **Async & Sync APIs** - Both async and sync versions available
+- **TypeScript First** - Full TypeScript support with strict types
+- **Cross-Platform** - macOS, Linux, Windows support
 
 ## Benchmarks
 
 Tested on Apple M1 Pro with Bun 1.3.3 (compared to sharp v0.34.5):
 
-### Performance Summary
-
-```text
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                     bun-image-turbo vs sharp Performance                     │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ WebP Metadata           ████████████████████████████████████  950x faster    │
-│ JPEG Metadata           ████████████████████████████████████  38x faster     │
-│ Concurrent (50 ops)     ██████████████████████████             2.6x faster   │
-│ Transform Pipeline      ████████████████████                   1.6x faster   │
-│ Thumbnail Resize        ████████████████                       1.2x faster   │
-│ HEIC Support            ████████████████████ EXCLUSIVE         N/A in sharp  │
-│ Blurhash Generation     ████████████████████ EXCLUSIVE         N/A in sharp  │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Detailed Benchmarks
-
 | Operation | bun-image-turbo | sharp | Speedup |
 |-----------|---------------:|------:|:-------:|
-| **10MB WebP Metadata** | 0.004ms | 3.4ms | **950x faster** |
-| **10MB JPEG Metadata** | 0.003ms | 0.1ms | **38x faster** |
-| **1MB JPEG Metadata** | 0.003ms | 0.1ms | **30x faster** |
-| **50 Concurrent Ops** | 62ms | 160ms | **2.6x faster** |
-| **Transform Pipeline** | 12.2ms | 19.1ms | **1.6x faster** |
-| **1MB JPEG → 800px** | 12.6ms | 20.3ms | **1.6x faster** |
-| **1MB JPEG → WebP** | 36.4ms | 46.1ms | **1.3x faster** |
-| **Thumbnail (200px)** | 8.8ms | 10.7ms | **1.2x faster** |
+| **WebP Metadata** | 0.004ms | 3.4ms | **950x** |
+| **JPEG Metadata** | 0.003ms | 0.1ms | **38x** |
+| **50 Concurrent Ops** | 62ms | 160ms | **2.6x** |
+| **Transform Pipeline** | 12.2ms | 19.1ms | **1.6x** |
+| **1MB JPEG → 800px** | 12.6ms | 20.3ms | **1.6x** |
+| **Thumbnail (200px)** | 8.8ms | 10.7ms | **1.2x** |
 
 ### HEIC/HEIF Support (Exclusive)
 
@@ -60,27 +52,12 @@ bun-image-turbo is the **only** high-performance image library with native HEIC 
 
 | Operation | Time | Notes |
 |-----------|-----:|:------|
-| **HEIC Metadata** | 0.1ms | Instant metadata extraction |
+| **HEIC Metadata** | 0.1ms | Header-only parsing |
 | **HEIC → JPEG** | 169ms | Full quality conversion |
-| **HEIC → 800px JPEG** | 138ms | Optimized shrink-on-decode |
-| **HEIC → 200px thumbnail** | 137ms | Fast thumbnail generation |
-| **HEIC → WebP** | 798ms | Modern format conversion |
-| **HEIC Blurhash** | 301ms | Placeholder generation |
+| **HEIC → 800px** | 138ms | Shrink-on-decode optimization |
+| **HEIC → Thumbnail** | 137ms | Fast 200px generation |
 
-> sharp does **NOT** support HEIC/HEIF files!
-
-### Key Strengths
-
-- **950x faster** WebP metadata extraction
-- **38x faster** JPEG metadata (header-only parsing)
-- **2.6x faster** under concurrent load (server workloads)
-- **1.6x faster** transform pipelines (resize + rotate + grayscale)
-- **Native HEIC/HEIF support** - Read iPhone photos directly
-- **Shrink-on-decode** optimization for JPEG and HEIC
-- Built-in **Blurhash** generation
-- Zero-copy buffer handling with Rust
-
-> Run benchmarks yourself: `bun run benchmarks/final_comparison.ts`
+> **Note:** sharp does NOT support HEIC/HEIF files!
 
 ## Installation
 
@@ -101,36 +78,52 @@ pnpm add bun-image-turbo
 ## Quick Start
 
 ```typescript
-import { resize, toWebp, metadata, transform } from 'bun-image-turbo';
+import { metadata, resize, transform, toWebp, blurhash } from 'bun-image-turbo';
 
 // Read image
-const input = await Bun.file('input.jpg').arrayBuffer();
-const buffer = Buffer.from(input);
+const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
 
-// Get metadata
+// Get metadata (header-only, ultra-fast)
 const info = await metadata(buffer);
 console.log(`${info.width}x${info.height} ${info.format}`);
 
-// Resize image
-const resized = await resize(buffer, { width: 800 });
+// Resize with shrink-on-decode optimization
+const thumbnail = await resize(buffer, { width: 200 });
 
 // Convert to WebP
 const webp = await toWebp(buffer, { quality: 85 });
 
-// Apply multiple transformations
+// Full transform pipeline
 const result = await transform(buffer, {
-  resize: { width: 400, height: 300 },
+  resize: { width: 800, height: 600, fit: 'cover' },
   rotate: 90,
   grayscale: true,
-  output: { format: 'webp', webp: { quality: 80 } }
+  sharpen: 10,
+  output: { format: 'webp', webp: { quality: 85 } }
 });
+
+// Generate blurhash placeholder
+const { hash } = await blurhash(buffer, 4, 3);
+console.log(hash); // "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
 
 // Save result
 await Bun.write('output.webp', result);
+```
 
-// Convert HEIC (iPhone photo) to JPEG
-const heicInput = await Bun.file('photo.heic').arrayBuffer();
-const jpeg = await toJpeg(Buffer.from(heicInput), { quality: 90 });
+### HEIC Conversion (macOS ARM64)
+
+```typescript
+import { toJpeg, metadata } from 'bun-image-turbo';
+
+// Read iPhone photo
+const heic = Buffer.from(await Bun.file('IMG_1234.HEIC').arrayBuffer());
+
+// Get metadata
+const info = await metadata(heic);
+console.log(info.format); // 'heic'
+
+// Convert to JPEG
+const jpeg = await toJpeg(heic, { quality: 90 });
 await Bun.write('photo.jpg', jpeg);
 ```
 
@@ -138,71 +131,64 @@ await Bun.write('photo.jpg', jpeg);
 
 ### `metadata(input)` / `metadataSync(input)`
 
-Get image metadata.
+Get image metadata without fully decoding. Ultra-fast header-only parsing.
 
 ```typescript
-const info = await metadata(imageBuffer);
-// { width: 1920, height: 1080, format: 'jpeg', hasAlpha: false, ... }
+const info = await metadata(buffer);
+// { width, height, format, channels, hasAlpha, ... }
 ```
 
 ### `resize(input, options)` / `resizeSync(input, options)`
 
-Resize an image.
+Resize image with automatic shrink-on-decode optimization. **Returns PNG format.**
 
 ```typescript
-// Resize by width (maintains aspect ratio)
-const resized = await resize(imageBuffer, { width: 800 });
-
-// Resize by height
-const resized = await resize(imageBuffer, { height: 600 });
-
-// Resize with specific dimensions
-const resized = await resize(imageBuffer, {
+const resized = await resize(buffer, {
   width: 800,
   height: 600,
   fit: 'cover',      // 'cover' | 'contain' | 'fill' | 'inside' | 'outside'
   filter: 'lanczos3' // 'nearest' | 'bilinear' | 'catmullRom' | 'mitchell' | 'lanczos3'
 });
+
+// For other output formats, use transform():
+const jpeg = await transform(buffer, {
+  resize: { width: 800 },
+  output: { format: 'jpeg', jpeg: { quality: 85 } }
+});
 ```
 
 ### `toJpeg(input, options?)` / `toJpegSync(input, options?)`
 
-Convert to JPEG.
+Convert to JPEG using TurboJPEG with SIMD acceleration.
 
 ```typescript
-const jpeg = await toJpeg(imageBuffer, { quality: 85 });
+const jpeg = await toJpeg(buffer, { quality: 85 });
 ```
 
 ### `toPng(input, options?)` / `toPngSync(input, options?)`
 
-Convert to PNG.
+Convert to PNG with adaptive compression.
 
 ```typescript
-const png = await toPng(imageBuffer, { compression: 6 });
+const png = await toPng(buffer, { compression: 6 });
 ```
 
 ### `toWebp(input, options?)` / `toWebpSync(input, options?)`
 
-Convert to WebP.
+Convert to WebP (lossy or lossless).
 
 ```typescript
-// Lossy WebP
-const webp = await toWebp(imageBuffer, { quality: 80 });
-
-// Lossless WebP
-const lossless = await toWebp(imageBuffer, { lossless: true });
+const webp = await toWebp(buffer, { quality: 80 });
+const lossless = await toWebp(buffer, { lossless: true });
 ```
 
 ### `transform(input, options)` / `transformSync(input, options)`
 
-Apply multiple transformations in a single operation (most efficient).
+Apply multiple transformations in a single operation.
 
 ```typescript
-const result = await transform(imageBuffer, {
-  // Resize
+const result = await transform(buffer, {
   resize: { width: 800, height: 600, fit: 'cover' },
-
-  // Transformations
   rotate: 90,        // 90, 180, or 270 degrees
   flipH: true,       // Flip horizontally
   flipV: false,      // Flip vertically
@@ -211,8 +197,6 @@ const result = await transform(imageBuffer, {
   sharpen: 10,       // Sharpen amount (0-100)
   brightness: 10,    // Brightness (-100 to 100)
   contrast: 5,       // Contrast (-100 to 100)
-
-  // Output format
   output: {
     format: 'webp',
     webp: { quality: 85 }
@@ -222,92 +206,86 @@ const result = await transform(imageBuffer, {
 
 ### `blurhash(input, componentsX?, componentsY?)` / `blurhashSync(...)`
 
-Generate a blurhash placeholder string.
+Generate a compact blurhash placeholder string.
 
 ```typescript
-const { hash, width, height } = await blurhash(imageBuffer, 4, 3);
-console.log(hash); // "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+const { hash, width, height } = await blurhash(buffer, 4, 3);
 ```
 
 ### `version()`
 
-Get library version.
+Get the library version.
 
 ```typescript
-console.log(version()); // "1.0.0"
+import { version } from 'bun-image-turbo';
+console.log(version()); // "1.2.1"
 ```
-
-## Options
-
-### Resize Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `width` | `number` | - | Target width (optional if height provided) |
-| `height` | `number` | - | Target height (optional if width provided) |
-| `filter` | `string` | `'lanczos3'` | Resize algorithm |
-| `fit` | `string` | `'cover'` | How to fit the image |
-
-### Filter Types
-
-- `nearest` - Fastest, lowest quality
-- `bilinear` - Fast, good quality
-- `catmullRom` - Balanced speed and quality
-- `mitchell` - Good for downscaling
-- `lanczos3` - Highest quality, slower (default)
-
-### Fit Modes
-
-- `cover` - Resize to cover target dimensions (may crop)
-- `contain` - Resize to fit within target (may have padding)
-- `fill` - Resize to exact dimensions (may distort)
-- `inside` - Resize only if larger than target
-- `outside` - Resize only if smaller than target
-
-### JPEG Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `quality` | `number` | `80` | Quality 1-100 |
-
-### PNG Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `compression` | `number` | `6` | Compression level 0-9 |
-
-### WebP Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `quality` | `number` | `80` | Quality 1-100 (lossy) |
-| `lossless` | `boolean` | `false` | Use lossless compression |
 
 ## Supported Formats
 
 | Format | Read | Write | Notes |
-|--------|------|-------|-------|
-| JPEG | Yes | Yes | TurboJPEG with SIMD |
-| PNG | Yes | Yes | Adaptive compression |
-| WebP | Yes | Yes | Lossy & lossless |
-| HEIC/HEIF | Yes | No | iPhone photos, via libheif |
-| AVIF | Yes | No | Via libheif |
-| GIF | Yes | Yes | Animated support |
-| BMP | Yes | Yes | - |
-| ICO | Yes | No | Multi-size icons |
-| TIFF | Yes | No | Multi-page support |
+|--------|:----:|:-----:|-------|
+| JPEG | ✅ | ✅ | TurboJPEG with SIMD |
+| PNG | ✅ | ✅ | Adaptive compression |
+| WebP | ✅ | ✅ | Lossy & lossless |
+| HEIC/HEIF | ✅ | ❌ | macOS ARM64 only |
+| AVIF | ✅ | ❌ | Via libheif |
+| GIF | ✅ | ✅ | Animated support |
+| BMP | ✅ | ✅ | Full support |
+| TIFF | ✅ | ❌ | Multi-page support |
+| ICO | ✅ | ❌ | Multi-size icons |
 
 ## Supported Platforms
 
-| Platform | Architecture | Support |
-|----------|--------------|---------|
-| macOS | ARM64 (M1/M2/M3) | Yes |
-| macOS | x64 (Intel) | Yes |
-| Linux | x64 (glibc) | Yes |
-| Linux | x64 (musl/Alpine) | Yes |
-| Linux | ARM64 (glibc) | Yes |
-| Linux | ARM64 (musl) | Yes |
-| Windows | x64 | Yes |
+Prebuilt binaries are available for all major platforms:
+
+| Platform | Architecture | Supported | HEIC |
+|----------|--------------|:---------:|:----:|
+| macOS | ARM64 (M1/M2/M3/M4/M5) | ✅ | ✅ |
+| macOS | x64 (Intel) | ✅ | ❌ |
+| Linux | x64 (glibc) | ✅ | ❌ |
+| Linux | x64 (musl/Alpine) | ✅ | ❌ |
+| Linux | ARM64 (glibc) | ✅ | ❌ |
+| Windows | x64 | ✅ | ❌ |
+| Windows | ARM64 | ✅ | ❌ |
+
+> **Note:** HEIC/HEIF decoding is only available on macOS ARM64. All other image formats work on all platforms.
+
+## Examples
+
+The [`examples/`](./examples/) folder contains standalone examples:
+
+```bash
+cd examples
+bun install
+
+# Basic usage - metadata, resize, convert, transform, blurhash
+bun run basic
+
+# HEIC conversion - convert iPhone photos (macOS ARM64 only)
+bun run heic
+
+# API endpoint - HTTP server for on-the-fly image processing
+bun run api
+
+# Batch processing - process multiple images in parallel
+bun run batch ./input ./output
+```
+
+| File | Description |
+|------|-------------|
+| [`basic-usage.ts`](./examples/basic-usage.ts) | Core functionality demo |
+| [`heic-conversion.ts`](./examples/heic-conversion.ts) | HEIC/HEIF conversion |
+| [`api-endpoint.ts`](./examples/api-endpoint.ts) | HTTP image processing server |
+| [`batch-processing.ts`](./examples/batch-processing.ts) | Parallel batch processing |
+
+## Documentation
+
+Full documentation is available at **[https://nexus-aissam.github.io/bun-image-turbo](https://nexus-aissam.github.io/bun-image-turbo)**
+
+- [Getting Started](https://nexus-aissam.github.io/bun-image-turbo/guide/)
+- [API Reference](https://nexus-aissam.github.io/bun-image-turbo/api/)
+- [Examples](https://nexus-aissam.github.io/bun-image-turbo/examples/)
 
 ## Development
 
@@ -326,7 +304,7 @@ bun run build
 bun run build:ts
 
 # Run tests
-bun test
+bun test test/
 ```
 
 ### Requirements
@@ -346,7 +324,7 @@ Aissam Irhir ([@nexus-aissam](https://github.com/nexus-aissam))
 
 - [turbojpeg](https://crates.io/crates/turbojpeg) - libjpeg-turbo bindings with SIMD
 - [image](https://crates.io/crates/image) - Rust image processing library
-- [fast_image_resize](https://crates.io/crates/fast_image_resize) - Fast image resizing
+- [fast_image_resize](https://crates.io/crates/fast_image_resize) - Fast image resizing with Rayon
 - [webp](https://crates.io/crates/webp) - WebP encoding/decoding
 - [libheif-rs](https://crates.io/crates/libheif-rs) - HEIC/HEIF decoding via libheif
 - [blurhash](https://crates.io/crates/blurhash) - Blurhash generation

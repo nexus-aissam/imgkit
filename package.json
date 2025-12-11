@@ -1,10 +1,20 @@
 {
   "name": "bun-image-turbo",
-  "version": "1.2.0",
-  "description": "High-performance image processing for Bun and Node.js - resize, convert, compress with HEIC, WebP, AVIF, PNG, JPEG support",
+  "version": "1.2.1",
+  "author": "Aissam Irhir <aissamirhir@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexus-aissam/bun-image-turbo.git"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4",
+    "@types/bun": "latest",
+    "sharp": "^0.34.5",
+    "tsup": "^8.4.0",
+    "typescript": "^5.9.0"
+  },
   "exports": {
     ".": {
       "import": {
@@ -17,9 +27,43 @@
       }
     }
   },
+  "bugs": {
+    "url": "https://github.com/nexus-aissam/bun-image-turbo/issues"
+  },
+  "description": "High-performance image processing for Bun and Node.js - resize, convert, compress with HEIC, WebP, AVIF, PNG, JPEG support",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "files": [
     "dist"
   ],
+  "homepage": "https://github.com/nexus-aissam/bun-image-turbo#readme",
+  "keywords": [
+    "image",
+    "resize",
+    "compress",
+    "heic",
+    "heif",
+    "webp",
+    "avif",
+    "png",
+    "jpeg",
+    "jpg",
+    "gif",
+    "iphone",
+    "thumbnail",
+    "crop",
+    "convert",
+    "processing",
+    "bun",
+    "nodejs",
+    "rust",
+    "napi",
+    "native",
+    "fast",
+    "turbo"
+  ],
+  "license": "MIT",
   "napi": {
     "name": "image-turbo",
     "binaryName": "image-turbo",
@@ -46,49 +90,5 @@
     "lint": "eslint src",
     "clean": "rm -rf dist *.node npm"
   },
-  "keywords": [
-    "image",
-    "resize",
-    "compress",
-    "heic",
-    "heif",
-    "webp",
-    "avif",
-    "png",
-    "jpeg",
-    "jpg",
-    "gif",
-    "iphone",
-    "thumbnail",
-    "crop",
-    "convert",
-    "processing",
-    "bun",
-    "nodejs",
-    "rust",
-    "napi",
-    "native",
-    "fast",
-    "turbo"
-  ],
-  "author": "Aissam Irhir <aissamirhir@gmail.com>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nexus-aissam/bun-image-turbo.git"
-  },
-  "bugs": {
-    "url": "https://github.com/nexus-aissam/bun-image-turbo/issues"
-  },
-  "homepage": "https://github.com/nexus-aissam/bun-image-turbo#readme",
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "devDependencies": {
-    "@napi-rs/cli": "^2.18.4",
-    "@types/bun": "latest",
-    "sharp": "^0.34.5",
-    "tsup": "^8.4.0",
-    "typescript": "^5.9.0"
-  }
+  "types": "./dist/index.d.ts"
 }
