@@ -24,17 +24,23 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             build: |
-              # Symlink nasm to /usr/local/bin so cmake can find it
-              sudo ln -sf $(brew --prefix nasm)/bin/nasm /usr/local/bin/nasm
-              which nasm && nasm --version
+              # Export NASM path for cmake to find it (turbojpeg-sys requirement)
+              export NASM_PATH=$(brew --prefix nasm)/bin
+              export PATH="$NASM_PATH:$PATH"
+              export CMAKE_ASM_NASM_COMPILER="$NASM_PATH/nasm"
+              echo "NASM at: $(which nasm)"
+              nasm --version
               ./node_modules/.bin/napi build --platform --release --target x86_64-apple-darwin --features heic
               strip -x *.node
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
-              # Symlink nasm to /usr/local/bin so cmake can find it
-              sudo ln -sf $(brew --prefix nasm)/bin/nasm /usr/local/bin/nasm
-              which nasm && nasm --version
+              # Export NASM path for cmake to find it (turbojpeg-sys requirement)
+              export NASM_PATH=$(brew --prefix nasm)/bin
+              export PATH="$NASM_PATH:$PATH"
+              export CMAKE_ASM_NASM_COMPILER="$NASM_PATH/nasm"
+              echo "NASM at: $(which nasm)"
+              nasm --version
               ./node_modules/.bin/napi build --platform --release --target aarch64-apple-darwin --features heic
               strip -x *.node
 
@@ -49,13 +55,16 @@ jobs:
           # Linux glibc x86_64 (with HEIC support)
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            docker: node:20-bookworm
             build: |
               set -e
-              apt-get update && apt-get install -y nasm cmake libheif-dev pkg-config
-              # Update to latest stable Rust (need 1.85+ for image crate)
-              rustup default stable
-              rustup update
+              apt-get update && apt-get install -y nasm cmake libheif-dev pkg-config build-essential
+              # Install latest stable Rust (need 1.85+ for moxcms crate)
+              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+              . "$HOME/.cargo/env"
+              rustc --version
+              cargo --version
+              npm install --ignore-scripts
               ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-gnu --features heic
               strip *.node
 
@@ -79,10 +88,11 @@ jobs:
             build: |
               set -e
               apk add --no-cache nasm cmake make gcc g++ musl-dev libc-dev curl bash perl linux-headers libheif-dev pkgconfig
-              # Install latest stable Rust (need 1.85+ for image crate)
+              # Install latest stable Rust (need 1.85+ for moxcms crate)
               curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
               . "$HOME/.cargo/env"
-              rustup update
+              rustc --version
+              cargo --version
               npm install --ignore-scripts
               ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-musl --features heic
               strip *.node
