@@ -44,7 +44,7 @@ const resized = await resize(buffer, { height: 600 });
 const resized = await resize(buffer, {
   width: 800,
   height: 600,
-  fit: 'cover'  // crop to fill
+  fit: 'Cover'  // crop to fill (PascalCase)
 });
 ```
 
@@ -74,8 +74,8 @@ Use `transform()` for multiple operations in one call:
 
 ```typescript
 const result = await transform(buffer, {
-  // Resize
-  resize: { width: 800, height: 600, fit: 'cover' },
+  // Resize (enum values are PascalCase)
+  resize: { width: 800, height: 600, fit: 'Cover' },
 
   // Rotate (90, 180, or 270)
   rotate: 90,
@@ -91,9 +91,9 @@ const result = await transform(buffer, {
   blur: 2,          // 0 to 100
   sharpen: 10,      // 0 to 100
 
-  // Output format
+  // Output format (PascalCase: 'Jpeg', 'Png', 'WebP', 'Gif', 'Bmp')
   output: {
-    format: 'webp',
+    format: 'WebP',
     webp: { quality: 80 }
   }
 });

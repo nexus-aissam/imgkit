@@ -74,7 +74,8 @@ const server = Bun.serve({
 
           const result = await resize(buffer, { width, height, fit });
           return new Response(result, {
-            headers: { ...headers, 'Content-Type': 'image/jpeg' }
+            // Note: resize() always outputs PNG format
+            headers: { ...headers, 'Content-Type': 'image/png' }
           });
         }
 
@@ -221,15 +222,20 @@ Response:
 ### Resize Image
 
 ```bash
-# Resize to 800px width
+# Resize to 800px width (outputs PNG)
 curl -X POST --data-binary @photo.jpg \
   "http://localhost:3000/resize?width=800" \
-  --output resized.jpg
+  --output resized.png
 
-# Resize with specific dimensions
+# Resize with specific dimensions (outputs PNG)
 curl -X POST --data-binary @photo.jpg \
   "http://localhost:3000/resize?width=400&height=300&fit=cover" \
-  --output thumbnail.jpg
+  --output thumbnail.png
+
+# For other formats, use /transform instead:
+curl -X POST --data-binary @photo.jpg \
+  "http://localhost:3000/transform?width=800&format=jpeg&quality=85" \
+  --output resized.jpg
 ```
 
 ### Convert Format

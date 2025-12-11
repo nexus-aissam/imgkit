@@ -12,6 +12,7 @@ Built from the ground up for speed:
 - **38x faster** JPEG metadata parsing
 - **2.6x faster** under concurrent load
 - Zero-copy buffer handling with Rust
+- **Cross-platform** - macOS, Linux, Windows (all architectures)
 
 ### HEIC Support
 

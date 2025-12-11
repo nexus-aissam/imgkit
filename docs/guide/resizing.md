@@ -21,7 +21,7 @@ const resized = await resize(buffer, { width: 800, height: 600 });
 
 Control how the image fits into the target dimensions:
 
-### `cover` (default)
+### `Cover` (default)
 
 Resize to cover the target area. May crop edges.
 
@@ -29,12 +29,12 @@ Resize to cover the target area. May crop edges.
 const result = await resize(buffer, {
   width: 400,
   height: 400,
-  fit: 'cover'
+  fit: 'Cover'  // PascalCase
 });
 // Result: 400x400, cropped to fill
 ```
 
-### `contain`
+### `Contain`
 
 Resize to fit within target. May have letterboxing.
 
@@ -42,12 +42,12 @@ Resize to fit within target. May have letterboxing.
 const result = await resize(buffer, {
   width: 400,
   height: 400,
-  fit: 'contain'
+  fit: 'Contain'
 });
 // Result: Fits within 400x400, aspect ratio preserved
 ```
 
-### `fill`
+### `Fill`
 
 Stretch to exact dimensions. May distort.
 
@@ -55,12 +55,12 @@ Stretch to exact dimensions. May distort.
 const result = await resize(buffer, {
   width: 400,
   height: 400,
-  fit: 'fill'
+  fit: 'Fill'
 });
 // Result: Exactly 400x400, may be stretched
 ```
 
-### `inside`
+### `Inside`
 
 Only resize if image is larger than target.
 
@@ -68,12 +68,12 @@ Only resize if image is larger than target.
 const result = await resize(buffer, {
   width: 400,
   height: 400,
-  fit: 'inside'
+  fit: 'Inside'
 });
 // Result: Shrinks if larger, unchanged if smaller
 ```
 
-### `outside`
+### `Outside`
 
 Only resize if image is smaller than target.
 
@@ -81,7 +81,7 @@ Only resize if image is smaller than target.
 const result = await resize(buffer, {
   width: 400,
   height: 400,
-  fit: 'outside'
+  fit: 'Outside'
 });
 // Result: Enlarges if smaller, unchanged if larger
 ```
@@ -93,7 +93,7 @@ Choose the resampling algorithm for quality/speed tradeoff:
 ```typescript
 const result = await resize(buffer, {
   width: 800,
-  filter: 'lanczos3'  // Highest quality
+  filter: 'Lanczos3'  // Highest quality (PascalCase)
 });
 ```
 
@@ -101,11 +101,11 @@ const result = await resize(buffer, {
 
 | Filter | Quality | Speed | Best For |
 |--------|---------|-------|----------|
-| `nearest` | Low | Fastest | Pixel art, icons |
-| `bilinear` | Good | Fast | Quick previews |
-| `catmullRom` | Better | Medium | General use |
-| `mitchell` | Better | Medium | Downscaling |
-| `lanczos3` | Best | Slower | High quality (default) |
+| `Nearest` | Low | Fastest | Pixel art, icons |
+| `Bilinear` | Good | Fast | Quick previews |
+| `CatmullRom` | Better | Medium | General use |
+| `Mitchell` | Better | Medium | Downscaling |
+| `Lanczos3` | Best | Slower | High quality (default) |
 
 ### Filter Examples
 
@@ -113,19 +113,19 @@ const result = await resize(buffer, {
 // Pixel art - preserve sharp edges
 const pixelArt = await resize(buffer, {
   width: 256,
-  filter: 'nearest'
+  filter: 'Nearest'
 });
 
 // Quick thumbnail
 const thumb = await resize(buffer, {
   width: 150,
-  filter: 'bilinear'
+  filter: 'Bilinear'
 });
 
 // High-quality resize
 const hq = await resize(buffer, {
   width: 1200,
-  filter: 'lanczos3'
+  filter: 'Lanczos3'
 });
 ```
 
@@ -140,10 +140,10 @@ const result = await transform(buffer, {
   resize: {
     width: 800,
     height: 600,
-    fit: 'cover',
-    filter: 'lanczos3'
+    fit: 'Cover',
+    filter: 'Lanczos3'
   },
-  output: { format: 'webp', webp: { quality: 80 } }
+  output: { format: 'WebP', webp: { quality: 80 } }
 });
 ```
 
@@ -157,9 +157,9 @@ const thumb = await transform(buffer, {
   resize: {
     width: 150,
     height: 150,
-    fit: 'cover'
+    fit: 'Cover'
   },
-  output: { format: 'webp', webp: { quality: 70 } }
+  output: { format: 'WebP', webp: { quality: 70 } }
 });
 ```
 
@@ -181,7 +181,7 @@ const result = await resize(buffer, { height: 450 });
 
 ## Performance Tips
 
-1. **Use appropriate filter**: `lanczos3` is beautiful but slower. Use `bilinear` for thumbnails.
+1. **Use appropriate filter**: `'Lanczos3'` is beautiful but slower. Use `'Bilinear'` for thumbnails.
 
 2. **Resize before other operations**: Resize first to reduce pixels processed.
 
@@ -192,7 +192,7 @@ const result = await resize(buffer, { height: 450 });
 const result = await transform(buffer, {
   resize: { width: 800 },
   grayscale: true,
-  output: { format: 'webp' }
+  output: { format: 'WebP' }
 });
 
 // Less efficient: Multiple operations

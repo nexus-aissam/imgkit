@@ -49,7 +49,8 @@ import { resize } from 'bun-image-turbo';
 
 const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
 const resized = await resize(buffer, { width: 800 });
-await Bun.write('resized.jpg', resized);
+// Note: resize() outputs PNG format
+await Bun.write('resized.png', resized);
 ```
 
 ### Convert to WebP

@@ -29,20 +29,20 @@ pnpm add bun-image-turbo
 
 ## Supported Platforms
 
-Prebuilt binaries are available for:
+Prebuilt binaries are available for **all major platforms**:
 
-| Platform | Architecture | HEIC Support |
-|----------|--------------|:------------:|
-| macOS | ARM64 (M1/M2/M3/M4/M5)  | ✅ |
-| macOS | x64 (Intel) | ❌ |
-| Linux | x64 (glibc) | ❌ |
-| Linux | x64 (musl/Alpine) | ❌ |
-| Linux | ARM64 (glibc) | ❌ |
-| Linux | ARM64 (musl) | ❌ |
-| Windows | x64 | ❌ |
+| Platform | Architecture | Supported | HEIC |
+|----------|--------------|:---------:|:----:|
+| macOS | ARM64 (M1/M2/M3/M4/M5) | ✅ | ✅ |
+| macOS | x64 (Intel) | ✅ | ❌ |
+| Linux | x64 (glibc) | ✅ | ❌ |
+| Linux | x64 (musl/Alpine) | ✅ | ❌ |
+| Linux | ARM64 (glibc) | ✅ | ❌ |
+| Windows | x64 | ✅ | ❌ |
+| Windows | ARM64 | ✅ | ❌ |
 
-::: tip HEIC Support
-HEIC/HEIF support is currently available on **macOS ARM64** only. This is due to libheif dependency requirements. Other platforms can still process all other image formats.
+::: tip All Platforms Supported
+All platforms listed above are fully supported. HEIC/HEIF support is only available on **macOS ARM64** due to libheif requirements. All other image formats (JPEG, PNG, WebP, GIF, BMP, TIFF, ICO) work on **all platforms**.
 :::
 
 ## Verifying Installation

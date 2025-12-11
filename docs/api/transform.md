@@ -1,6 +1,6 @@
 # transform
 
-Apply multiple image transformations in a single operation.
+Apply multiple image transformations in a single operation. This is the most efficient way to combine resize, rotate, flip, filters, and format conversion.
 
 ## Signature
 
@@ -20,43 +20,114 @@ function transformSync(input: Buffer, options: TransformOptions): Buffer
 
 ```typescript
 interface TransformOptions {
-  // Resize
-  resize?: {
-    width?: number;
-    height?: number;
-    fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
-    filter?: 'nearest' | 'bilinear' | 'catmullRom' | 'mitchell' | 'lanczos3';
-  };
+  /** Resize configuration */
+  resize?: ResizeOptions;
 
-  // Rotation (90, 180, or 270 degrees)
-  rotate?: 90 | 180 | 270;
+  /** Output format and options (default: PNG) */
+  output?: OutputOptions;
 
-  // Flipping
-  flipH?: boolean;  // Horizontal flip
-  flipV?: boolean;  // Vertical flip
+  /** Rotate degrees (90, 180, or 270) */
+  rotate?: number;
 
-  // Color adjustments
+  /** Flip horizontally */
+  flipH?: boolean;
+
+  /** Flip vertically */
+  flipV?: boolean;
+
+  /** Convert to grayscale */
   grayscale?: boolean;
-  brightness?: number;  // -100 to 100
-  contrast?: number;    // -100 to 100
 
-  // Effects
-  blur?: number;    // 0 to 100
-  sharpen?: number; // 0 to 100
+  /** Blur radius (0-100) */
+  blur?: number;
 
-  // Output format (optional - defaults to PNG)
-  output?: {
-    format: 'jpeg' | 'png' | 'webp' | 'gif' | 'bmp';
-    jpeg?: { quality?: number };
-    png?: { compression?: number };
-    webp?: { quality?: number; lossless?: boolean };
-  };
+  /** Sharpen amount (0-100) */
+  sharpen?: number;
+
+  /** Brightness adjustment (-100 to 100) */
+  brightness?: number;
+
+  /** Contrast adjustment (-100 to 100) */
+  contrast?: number;
 }
 ```
 
+### ResizeOptions
+
+```typescript
+interface ResizeOptions {
+  /** Target width (optional if height provided) */
+  width?: number;
+
+  /** Target height (optional if width provided) */
+  height?: number;
+
+  /** How to fit image into dimensions (default: 'Cover') */
+  fit?: FitMode;
+
+  /** Resampling algorithm (default: 'Lanczos3') */
+  filter?: ResizeFilter;
+
+  /** Background color for padding [r, g, b, a] (default: transparent) */
+  background?: number[];
+}
+
+/** Resize filter/algorithm */
+enum ResizeFilter {
+  Nearest = 'Nearest',
+  Bilinear = 'Bilinear',
+  CatmullRom = 'CatmullRom',
+  Mitchell = 'Mitchell',
+  Lanczos3 = 'Lanczos3'
+}
+
+/** Image fit mode */
+enum FitMode {
+  Cover = 'Cover',
+  Contain = 'Contain',
+  Fill = 'Fill',
+  Inside = 'Inside',
+  Outside = 'Outside'
+}
+```
+
+### OutputOptions
+
+```typescript
+interface OutputOptions {
+  /** Output format */
+  format: ImageFormat;
+
+  /** JPEG options (if format is Jpeg) */
+  jpeg?: { quality?: number };  // 1-100, default: 80
+
+  /** PNG options (if format is Png) */
+  png?: { compression?: number };  // 0-9, default: 6
+
+  /** WebP options (if format is WebP) */
+  webp?: { quality?: number; lossless?: boolean };  // quality: 1-100, default: 80
+}
+
+/** Image format enum */
+enum ImageFormat {
+  Jpeg = 'Jpeg',
+  Png = 'Png',
+  WebP = 'WebP',
+  Gif = 'Gif',
+  Bmp = 'Bmp'
+}
+```
+
+::: warning Case Sensitivity
+All enum values are **PascalCase**:
+- Formats: `'Jpeg'`, `'Png'`, `'WebP'`, `'Gif'`, `'Bmp'`
+- Fit modes: `'Cover'`, `'Contain'`, `'Fill'`, `'Inside'`, `'Outside'`
+- Filters: `'Nearest'`, `'Bilinear'`, `'CatmullRom'`, `'Mitchell'`, `'Lanczos3'`
+:::
+
 ## Returns
 
-`Buffer` - Transformed image in specified output format (defaults to PNG if no output format specified)
+`Buffer` - Transformed image in the specified format (default: PNG)
 
 ## Examples
 
@@ -67,7 +138,7 @@ import { transform } from 'bun-image-turbo';
 
 const result = await transform(buffer, {
   resize: { width: 800 },
-  output: { format: 'webp', webp: { quality: 80 } }
+  output: { format: 'WebP', webp: { quality: 85 } }
 });
 ```
 
@@ -78,22 +149,72 @@ const result = await transform(buffer, {
   resize: {
     width: 800,
     height: 600,
-    fit: 'cover'
+    fit: 'Cover'
   },
   output: {
-    format: 'jpeg',
+    format: 'Jpeg',
     jpeg: { quality: 85 }
   }
 });
 ```
 
+### Full Pipeline
+
+```typescript
+const result = await transform(buffer, {
+  // Resize to 800x600 with cover fit
+  resize: {
+    width: 800,
+    height: 600,
+    fit: 'Cover',
+    filter: 'Lanczos3'
+  },
+
+  // Rotate 90 degrees clockwise
+  rotate: 90,
+
+  // Flip
+  flipH: true,
+  flipV: false,
+
+  // Color adjustments
+  grayscale: true,
+  brightness: 10,
+  contrast: 5,
+
+  // Effects
+  blur: 2,
+  sharpen: 10,
+
+  // Output as WebP
+  output: {
+    format: 'WebP',
+    webp: { quality: 85 }
+  }
+});
+
+await Bun.write('output.webp', result);
+```
+
 ### Rotation
 
 ```typescript
-// Rotate 90° clockwise
-const rotated = await transform(buffer, {
+// Rotate 90 degrees clockwise
+const rotated90 = await transform(buffer, {
   rotate: 90,
-  output: { format: 'jpeg' }
+  output: { format: 'Jpeg' }
+});
+
+// Rotate 180 degrees
+const rotated180 = await transform(buffer, {
+  rotate: 180,
+  output: { format: 'Jpeg' }
+});
+
+// Rotate 270 degrees (90 counter-clockwise)
+const rotated270 = await transform(buffer, {
+  rotate: 270,
+  output: { format: 'Jpeg' }
 });
 ```
 
@@ -103,13 +224,20 @@ const rotated = await transform(buffer, {
 // Horizontal mirror
 const mirrored = await transform(buffer, {
   flipH: true,
-  output: { format: 'jpeg' }
+  output: { format: 'Jpeg' }
 });
 
 // Vertical flip
 const flipped = await transform(buffer, {
   flipV: true,
-  output: { format: 'jpeg' }
+  output: { format: 'Jpeg' }
+});
+
+// Both
+const both = await transform(buffer, {
+  flipH: true,
+  flipV: true,
+  output: { format: 'Png' }
 });
 ```
 
@@ -118,7 +246,7 @@ const flipped = await transform(buffer, {
 ```typescript
 const bw = await transform(buffer, {
   grayscale: true,
-  output: { format: 'jpeg' }
+  output: { format: 'Jpeg', jpeg: { quality: 85 } }
 });
 ```
 
@@ -127,66 +255,45 @@ const bw = await transform(buffer, {
 ```typescript
 const blurred = await transform(buffer, {
   blur: 10,  // 0-100
-  output: { format: 'jpeg' }
+  output: { format: 'Jpeg' }
 });
 ```
 
 ### Sharpen
 
 ```typescript
-const sharp = await transform(buffer, {
+const sharpened = await transform(buffer, {
   sharpen: 15,  // 0-100
-  output: { format: 'jpeg' }
+  output: { format: 'Jpeg', jpeg: { quality: 95 } }
 });
 ```
 
 ### Brightness and Contrast
 
 ```typescript
+// Brighten
+const brighter = await transform(buffer, {
+  brightness: 20,  // -100 to 100
+  output: { format: 'Jpeg' }
+});
+
+// Darken
+const darker = await transform(buffer, {
+  brightness: -20,
+  output: { format: 'Jpeg' }
+});
+
+// Increase contrast
+const highContrast = await transform(buffer, {
+  contrast: 30,  // -100 to 100
+  output: { format: 'Jpeg' }
+});
+
+// Combined
 const adjusted = await transform(buffer, {
-  brightness: 10,   // -100 to 100
-  contrast: 5,      // -100 to 100
-  output: { format: 'jpeg' }
-});
-```
-
-### Complete Pipeline
-
-```typescript
-const result = await transform(buffer, {
-  // Resize to cover 800x600
-  resize: {
-    width: 800,
-    height: 600,
-    fit: 'cover',
-    filter: 'lanczos3'
-  },
-
-  // Rotate 90°
-  rotate: 90,
-
-  // Apply effects
-  grayscale: true,
-  sharpen: 10,
-  brightness: 5,
-  contrast: 10,
-
-  // Output as WebP
-  output: {
-    format: 'webp',
-    webp: { quality: 85 }
-  }
-});
-```
-
-### Sync Version
-
-```typescript
-import { transformSync } from 'bun-image-turbo';
-
-const result = transformSync(buffer, {
-  resize: { width: 400 },
-  output: { format: 'jpeg' }
+  brightness: 10,
+  contrast: 15,
+  output: { format: 'Jpeg', jpeg: { quality: 90 } }
 });
 ```
 
@@ -197,92 +304,134 @@ const thumb = await transform(buffer, {
   resize: {
     width: 150,
     height: 150,
-    fit: 'cover'
+    fit: 'Cover'
   },
   sharpen: 5,  // Slight sharpen after resize
   output: {
-    format: 'webp',
+    format: 'WebP',
     webp: { quality: 70 }
   }
 });
 ```
 
+### Output Formats
+
+```typescript
+// JPEG output
+const jpeg = await transform(buffer, {
+  resize: { width: 800 },
+  output: { format: 'Jpeg', jpeg: { quality: 85 } }
+});
+
+// PNG output
+const png = await transform(buffer, {
+  resize: { width: 800 },
+  output: { format: 'Png', png: { compression: 6 } }
+});
+
+// WebP lossy output
+const webpLossy = await transform(buffer, {
+  resize: { width: 800 },
+  output: { format: 'WebP', webp: { quality: 80 } }
+});
+
+// WebP lossless output
+const webpLossless = await transform(buffer, {
+  resize: { width: 800 },
+  output: { format: 'WebP', webp: { lossless: true } }
+});
+
+// GIF output
+const gif = await transform(buffer, {
+  resize: { width: 400 },
+  output: { format: 'Gif' }
+});
+
+// BMP output
+const bmp = await transform(buffer, {
+  resize: { width: 400 },
+  output: { format: 'Bmp' }
+});
+```
+
+### Default Output (PNG)
+
+```typescript
+// If output is not specified, defaults to PNG
+const png = await transform(buffer, {
+  resize: { width: 800 },
+  grayscale: true
+});
+// Result is PNG format
+```
+
+### Sync Version
+
+```typescript
+import { transformSync } from 'bun-image-turbo';
+
+const result = transformSync(buffer, {
+  resize: { width: 400 },
+  output: { format: 'WebP', webp: { quality: 80 } }
+});
+```
+
+### HEIC Conversion (macOS ARM64)
+
+```typescript
+// Convert HEIC to JPEG
+const heicBuffer = Buffer.from(await Bun.file('photo.HEIC').arrayBuffer());
+const jpeg = await transform(heicBuffer, {
+  output: { format: 'Jpeg', jpeg: { quality: 90 } }
+});
+
+// Convert HEIC to WebP with resize
+const webp = await transform(heicBuffer, {
+  resize: { width: 1200 },
+  output: { format: 'WebP', webp: { quality: 85 } }
+});
+```
+
 ## Transformation Order
 
-Transformations are applied in this order:
+Operations are applied in this order:
 
-1. Resize
-2. Rotate
-3. Flip (H/V)
-4. Grayscale
-5. Blur
-6. Sharpen
-7. Brightness
-8. Contrast
-9. Encode to output format
+1. **Resize** - Scale the image
+2. **Rotate** - Rotate by 90/180/270 degrees
+3. **Flip** - Horizontal and/or vertical flip
+4. **Grayscale** - Convert to grayscale
+5. **Blur** - Apply Gaussian blur
+6. **Sharpen** - Apply unsharp mask
+7. **Brightness** - Adjust brightness
+8. **Contrast** - Adjust contrast
+9. **Encode** - Output to specified format
 
-## Output Format Options
+## Option Ranges
 
-### JPEG
-
-```typescript
-output: {
-  format: 'jpeg',
-  jpeg: { quality: 85 }  // 1-100
-}
-```
-
-### PNG
-
-```typescript
-output: {
-  format: 'png',
-  png: { compression: 6 }  // 0-9
-}
-```
-
-### WebP
-
-```typescript
-output: {
-  format: 'webp',
-  webp: {
-    quality: 80,      // 1-100
-    lossless: false   // true for lossless
-  }
-}
-```
-
-### GIF
-
-```typescript
-output: {
-  format: 'gif'
-  // No additional options
-}
-```
-
-### BMP
-
-```typescript
-output: {
-  format: 'bmp'
-  // No additional options
-}
-```
-
-::: info Default Output
-If `output` is not specified, the image will be encoded as PNG.
-:::
+| Option | Range | Default | Notes |
+|--------|-------|---------|-------|
+| `rotate` | 90, 180, 270 | - | Clockwise rotation |
+| `blur` | 0-100 | - | Higher = more blur |
+| `sharpen` | 0-100 | - | Higher = sharper |
+| `brightness` | -100 to 100 | 0 | Negative = darker |
+| `contrast` | -100 to 100 | 0 | Negative = less contrast |
 
 ## Performance Tips
 
 1. **Use transform() for multiple operations** - Single decode/encode is faster than chaining functions
 2. **Resize first** - Reduces pixels for subsequent operations
-3. **Choose appropriate filter** - `bilinear` is fast, `lanczos3` is high quality
+3. **Choose appropriate filter** - `'Bilinear'` is fast, `'Lanczos3'` is high quality
+
+## Notes
+
+- `output` is optional - defaults to PNG if not specified
+- JPEG encoding uses TurboJPEG with SIMD acceleration
+- Grayscale + JPEG = smaller file sizes
+- Sharpen is applied using unsharp mask algorithm
 
 ## See Also
 
-- [`resize()`](/api/resize) - Resize only
-- [`toJpeg()`](/api/to-jpeg) - Convert to JPEG only
-- [`toWebp()`](/api/to-webp) - Convert to WebP only
+- [`resize()`](/api/resize) - Simple resize (PNG output only)
+- [`toJpeg()`](/api/to-jpeg) - Convert to JPEG
+- [`toWebp()`](/api/to-webp) - Convert to WebP
+- [`blurhash()`](/api/blurhash) - Generate placeholder hash

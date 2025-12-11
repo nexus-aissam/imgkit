@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-12-12
+
+### Documentation
+
+- **Complete API documentation overhaul** - All TypeScript interfaces now match actual Rust implementation
+- **Fixed ImageMetadata interface** - Added all 18 fields (space, depth, bitsPerSample, isProgressive, isPalette, hasProfile, orientation, pages, loopCount, delay, background, compression, density)
+- **Fixed enum case sensitivity** - All enums are PascalCase (`'Jpeg'`, `'Cover'`, `'Lanczos3'`), not lowercase
+- **Added background option to resize()** - Document the `background: [r, g, b, a]` option for padding
+- **Enhanced README** - Professional layout with badges, benchmark tables, and documentation links
+
+### Changed
+
+- **Homepage** - Now points to GitHub Pages documentation site
+
+---
+
 ## [1.2.1] - 2025-12-12
 
 ### Documentation

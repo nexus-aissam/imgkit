@@ -45,8 +45,9 @@ async function main() {
   });
   const resizedInfo = await metadata(resized);
   console.log(`Resized to: ${resizedInfo.width}x${resizedInfo.height}`);
-  await Bun.write('output/resized.jpg', resized);
-  console.log('Saved: output/resized.jpg');
+  // Note: resize() always outputs PNG format
+  await Bun.write('output/resized.png', resized);
+  console.log('Saved: output/resized.png');
 
   // 3. Format conversion
   console.log('\n=== Format Conversion ===');
@@ -121,7 +122,7 @@ Has Alpha: false
 
 === Resize ===
 Resized to: 800x450
-Saved: output/resized.jpg
+Saved: output/resized.png
 
 === Format Conversion ===
 JPEG: 156.2KB

@@ -3,7 +3,7 @@
 Convert iPhone photos (HEIC/HEIF) to standard formats.
 
 ::: warning Platform Requirement
-HEIC support is only available on **macOS ARM64** (M1/M2/M3 Macs).
+HEIC support is only available on **macOS ARM64** (M1/M2/M3/M4/M5 Macs).
 :::
 
 ## Source Code
@@ -55,7 +55,7 @@ async function main() {
     console.log(`File size: ${(heicBuffer.length / 1024 / 1024).toFixed(2)}MB`);
   } catch (error) {
     console.error('HEIC not supported on this platform');
-    console.error('HEIC requires macOS ARM64 (M1/M2/M3)');
+    console.error('HEIC requires macOS ARM64 (M1/M2/M3/M4/M5)');
     return;
   }
 

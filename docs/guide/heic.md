@@ -13,15 +13,17 @@ HEIC (High Efficiency Image Container) is Apple's modern image format:
 
 ## Platform Support
 
-| Platform | HEIC Support |
-|----------|:------------:|
-| macOS ARM64 (M1/M2/M3/M4/M5) | ✅ |
-| macOS x64 (Intel) | ❌ |
-| Linux | ❌ |
-| Windows | ❌ |
+HEIC/HEIF decoding is only available on macOS ARM64:
 
-::: warning
-HEIC support requires macOS with Apple Silicon. This is due to libheif library requirements.
+| Platform | Architecture | HEIC Support |
+|----------|--------------|:------------:|
+| macOS | ARM64 (M1/M2/M3/M4/M5) | ✅ |
+| macOS | x64 (Intel) | ❌ |
+| Linux | x64 / ARM64 | ❌ |
+| Windows | x64 / ARM64 | ❌ |
+
+::: warning macOS ARM64 Only
+HEIC support requires macOS with Apple Silicon due to libheif library requirements. All other image formats (JPEG, PNG, WebP, GIF, BMP) are supported on **all platforms**.
 :::
 
 ## Reading HEIC Files

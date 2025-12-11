@@ -46,11 +46,11 @@ import {
 // Check version
 console.log(version()); // "1.2.1"
 
-// Get metadata
+// Get metadata (returns many fields - see metadata docs)
 const info = await metadata(buffer);
-// { width, height, format, channels, hasAlpha }
+// { width, height, format, space, channels, depth, hasAlpha, bitsPerSample, ... }
 
-// Resize
+// Resize (outputs PNG)
 const resized = await resize(buffer, { width: 800 });
 
 // Convert formats
@@ -59,16 +59,24 @@ const png = await toPng(buffer, { compression: 6 });
 const webp = await toWebp(buffer, { quality: 80 });
 
 // Transform with multiple operations
+// Note: enum values are PascalCase ('WebP', 'Cover', 'Lanczos3')
 const result = await transform(buffer, {
-  resize: { width: 800 },
+  resize: { width: 800, fit: 'Cover' },
   rotate: 90,
   grayscale: true,
-  output: { format: 'webp' }
+  output: { format: 'WebP', webp: { quality: 85 } }
 });
 
 // Generate blurhash
 const { hash } = await blurhash(buffer, 4, 3);
 ```
+
+::: warning Case Sensitivity
+All enum values are **PascalCase**:
+- Formats: `'Jpeg'`, `'Png'`, `'WebP'`, `'Gif'`, `'Bmp'`
+- Fit modes: `'Cover'`, `'Contain'`, `'Fill'`, `'Inside'`, `'Outside'`
+- Filters: `'Nearest'`, `'Bilinear'`, `'CatmullRom'`, `'Mitchell'`, `'Lanczos3'`
+:::
 
 ## Input Types
 

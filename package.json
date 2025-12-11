@@ -1,6 +1,6 @@
 {
   "name": "bun-image-turbo",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "author": "Aissam Irhir <aissamirhir@gmail.com>",
   "repository": {
     "type": "git",
@@ -37,7 +37,7 @@
   "files": [
     "dist"
   ],
-  "homepage": "https://github.com/nexus-aissam/bun-image-turbo#readme",
+  "homepage": "https://nexus-aissam.github.io/bun-image-turbo/",
   "keywords": [
     "image",
     "resize",

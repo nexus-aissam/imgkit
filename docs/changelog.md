@@ -2,7 +2,7 @@
 
 All notable changes to bun-image-turbo.
 
-## [1.2.1] - 2024-12-12
+## [1.2.2] - 2025-12-12
 
 ### Documentation
 
@@ -41,8 +41,8 @@ All notable changes to bun-image-turbo.
 - Linux x64 (glibc) - Full support except HEIC
 - Linux x64 (musl/Alpine) - Full support except HEIC
 - Linux ARM64 (glibc) - Full support except HEIC
-- Linux ARM64 (musl) - Full support except HEIC
 - Windows x64 - Full support except HEIC
+- Windows ARM64 - Full support except HEIC
 
 ---
 
