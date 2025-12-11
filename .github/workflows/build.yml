@@ -24,15 +24,17 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             build: |
-              export PATH="$(brew --prefix nasm)/bin:$PATH"
-              export ASM_NASM="$(brew --prefix nasm)/bin/nasm"
+              # Symlink nasm to /usr/local/bin so cmake can find it
+              sudo ln -sf $(brew --prefix nasm)/bin/nasm /usr/local/bin/nasm
+              which nasm && nasm --version
               ./node_modules/.bin/napi build --platform --release --target x86_64-apple-darwin --features heic
               strip -x *.node
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
-              export PATH="$(brew --prefix nasm)/bin:$PATH"
-              export ASM_NASM="$(brew --prefix nasm)/bin/nasm"
+              # Symlink nasm to /usr/local/bin so cmake can find it
+              sudo ln -sf $(brew --prefix nasm)/bin/nasm /usr/local/bin/nasm
+              which nasm && nasm --version
               ./node_modules/.bin/napi build --platform --release --target aarch64-apple-darwin --features heic
               strip -x *.node
 
