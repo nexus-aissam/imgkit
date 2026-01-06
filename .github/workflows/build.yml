@@ -33,9 +33,10 @@ jobs:
               ./node_modules/.bin/napi build --platform --release --target x86_64-apple-darwin
               strip -x *.node
 
-          # macOS ARM64 (with HEIC support - native build)
+          # macOS ARM64 (with HEIC support - native build, requires nightly for moxcms)
           - host: macos-latest
             target: aarch64-apple-darwin
+            rust: nightly
             build: |
               # Export NASM path for cmake to find it (turbojpeg-sys requirement)
               export NASM_PATH=$(brew --prefix nasm)/bin
@@ -140,8 +141,9 @@ jobs:
 
       - name: Install Rust
         if: ${{ !matrix.settings.docker }}
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ matrix.settings.rust || 'stable' }}
           targets: ${{ matrix.settings.target }}
 
       - name: Install dependencies
