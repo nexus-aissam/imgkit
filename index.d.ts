@@ -154,6 +154,31 @@ export interface TransformOptions {
   brightness?: number
   /** Contrast adjustment (-100 to 100) */
   contrast?: number
+  /** EXIF metadata to write (for JPEG/WebP output) */
+  exif?: ExifOptions
+}
+/** EXIF metadata options for writing */
+export interface ExifOptions {
+  /** Image description / caption / AI prompt */
+  imageDescription?: string
+  /** Artist / creator name */
+  artist?: string
+  /** Copyright notice */
+  copyright?: string
+  /** Software used to create the image */
+  software?: string
+  /** Date/time in EXIF format (YYYY:MM:DD HH:MM:SS) */
+  dateTime?: string
+  /** Original date/time in EXIF format */
+  dateTimeOriginal?: string
+  /** User comment (can contain JSON or other data) */
+  userComment?: string
+  /** Camera/device make */
+  make?: string
+  /** Camera/device model */
+  model?: string
+  /** Orientation (1-8) */
+  orientation?: number
 }
 /** Get image metadata synchronously */
 export declare function metadataSync(input: Buffer): ImageMetadata
@@ -185,3 +210,11 @@ export declare function transform(input: Buffer, options: TransformOptions): Pro
 export declare function blurhash(input: Buffer, componentsX?: number | undefined | null, componentsY?: number | undefined | null): Promise<BlurHashResult>
 /** Get library version */
 export declare function version(): string
+/** Write EXIF metadata to a WebP image synchronously */
+export declare function writeExifSync(input: Buffer, options: ExifOptions): Buffer
+/** Write EXIF metadata to a WebP image asynchronously */
+export declare function writeExif(input: Buffer, options: ExifOptions): Promise<Buffer>
+/** Strip EXIF metadata from an image synchronously */
+export declare function stripExifSync(input: Buffer): Buffer
+/** Strip EXIF metadata from an image asynchronously */
+export declare function stripExif(input: Buffer): Promise<Buffer>

@@ -29,6 +29,7 @@ bun run batch    # Batch processing
 | [heic-conversion.ts](/examples/heic-conversion) | HEIC/HEIF conversion |
 | [api-endpoint.ts](/examples/api-endpoint) | HTTP image processing server |
 | [batch-processing.ts](/examples/batch-processing) | Parallel batch processing |
+| [exif-metadata.ts](/examples/exif-metadata) | EXIF metadata writing for AI images |
 
 ## Quick Examples
 
@@ -90,6 +91,27 @@ console.log(`Hash: ${hash}`);
 console.log(`Original: ${width}x${height}`);
 ```
 
+### Add EXIF Metadata
+
+```typescript
+import { writeExif, toWebp } from 'bun-image-turbo';
+
+const buffer = Buffer.from(await Bun.file('ai-generated.png').arrayBuffer());
+const webp = await toWebp(buffer, { quality: 90 });
+
+const withExif = await writeExif(webp, {
+  imageDescription: 'A beautiful sunset over mountains',
+  artist: 'Stable Diffusion XL',
+  software: 'ComfyUI',
+  userComment: JSON.stringify({
+    prompt: 'sunset over mountains, 8k, detailed',
+    seed: 12345,
+    steps: 30
+  })
+});
+await Bun.write('with-metadata.webp', withExif);
+```
+
 ### Convert HEIC (macOS ARM64)
 
 ```typescript
@@ -112,5 +134,6 @@ await Bun.write('photo.jpg', jpeg);
 
 - [Basic Usage Example](/examples/basic-usage)
 - [HEIC Conversion Example](/examples/heic-conversion)
+- [EXIF Metadata Example](/examples/exif-metadata)
 - [API Endpoint Example](/examples/api-endpoint)
 - [Batch Processing Example](/examples/batch-processing)

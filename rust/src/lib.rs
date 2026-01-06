@@ -10,6 +10,7 @@ mod encode;
 mod decode;
 mod transform;
 mod error;
+mod metadata_write;
 
 use error::ImageError;
 
@@ -191,6 +192,34 @@ pub struct TransformOptions {
   pub brightness: Option<i32>,
   /// Contrast adjustment (-100 to 100)
   pub contrast: Option<i32>,
+  /// EXIF metadata to write (for JPEG/WebP output)
+  pub exif: Option<ExifOptions>,
+}
+
+/// EXIF metadata options for writing
+#[napi(object)]
+#[derive(Clone)]
+pub struct ExifOptions {
+  /// Image description / caption / AI prompt
+  pub image_description: Option<String>,
+  /// Artist / creator name
+  pub artist: Option<String>,
+  /// Copyright notice
+  pub copyright: Option<String>,
+  /// Software used to create the image
+  pub software: Option<String>,
+  /// Date/time in EXIF format (YYYY:MM:DD HH:MM:SS)
+  pub date_time: Option<String>,
+  /// Original date/time in EXIF format
+  pub date_time_original: Option<String>,
+  /// User comment (can contain JSON or other data)
+  pub user_comment: Option<String>,
+  /// Camera/device make
+  pub make: Option<String>,
+  /// Camera/device model
+  pub model: Option<String>,
+  /// Orientation (1-8)
+  pub orientation: Option<u16>,
 }
 
 // ============================================
@@ -374,4 +403,92 @@ pub async fn blurhash(input: Buffer, components_x: Option<u32>, components_y: Op
 #[napi]
 pub fn version() -> String {
   env!("CARGO_PKG_VERSION").to_string()
+}
+
+// ============================================
+// EXIF/METADATA WRITE FUNCTIONS
+// ============================================
+
+/// Convert ExifOptions to internal ExifWriteOptions
+fn exif_options_to_internal(options: &ExifOptions) -> metadata_write::ExifWriteOptions {
+  metadata_write::ExifWriteOptions {
+    image_description: options.image_description.clone(),
+    artist: options.artist.clone(),
+    copyright: options.copyright.clone(),
+    software: options.software.clone(),
+    date_time: options.date_time.clone(),
+    date_time_original: options.date_time_original.clone(),
+    user_comment: options.user_comment.clone(),
+    make: options.make.clone(),
+    model: options.model.clone(),
+    orientation: options.orientation,
+  }
+}
+
+/// Write EXIF metadata to a WebP image synchronously
+#[napi]
+pub fn write_exif_sync(input: Buffer, options: ExifOptions) -> Result<Buffer> {
+  let format = decode::detect_format(&input)?;
+  let internal_opts = exif_options_to_internal(&options);
+
+  let output = match format {
+    image::ImageFormat::Jpeg => metadata_write::write_jpeg_exif(&input, &internal_opts)?,
+    image::ImageFormat::WebP => metadata_write::write_webp_exif(&input, &internal_opts)?,
+    _ => return Err(Error::from_reason("EXIF writing only supported for JPEG and WebP formats")),
+  };
+
+  Ok(Buffer::from(output))
+}
+
+/// Write EXIF metadata to a WebP image asynchronously
+#[napi]
+pub async fn write_exif(input: Buffer, options: ExifOptions) -> Result<Buffer> {
+  tokio::task::spawn_blocking(move || {
+    let format = decode::detect_format(&input)?;
+    let internal_opts = exif_options_to_internal(&options);
+
+    let output = match format {
+      image::ImageFormat::Jpeg => metadata_write::write_jpeg_exif(&input, &internal_opts)?,
+      image::ImageFormat::WebP => metadata_write::write_webp_exif(&input, &internal_opts)?,
+      _ => return Err(ImageError::UnsupportedFormat("EXIF writing only supported for JPEG and WebP formats".to_string())),
+    };
+
+    Ok::<Buffer, ImageError>(Buffer::from(output))
+  })
+  .await
+  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+  .map_err(|e| e.into())
+}
+
+/// Strip EXIF metadata from an image synchronously
+#[napi]
+pub fn strip_exif_sync(input: Buffer) -> Result<Buffer> {
+  let format = decode::detect_format(&input)?;
+
+  let output = match format {
+    image::ImageFormat::Jpeg => metadata_write::strip_jpeg_exif(&input)?,
+    image::ImageFormat::WebP => metadata_write::strip_webp_exif(&input)?,
+    _ => return Err(Error::from_reason("EXIF stripping only supported for JPEG and WebP formats")),
+  };
+
+  Ok(Buffer::from(output))
+}
+
+/// Strip EXIF metadata from an image asynchronously
+#[napi]
+pub async fn strip_exif(input: Buffer) -> Result<Buffer> {
+  tokio::task::spawn_blocking(move || {
+    let format = decode::detect_format(&input)?;
+
+    let output = match format {
+      image::ImageFormat::Jpeg => metadata_write::strip_jpeg_exif(&input)?,
+      image::ImageFormat::WebP => metadata_write::strip_webp_exif(&input)?,
+      _ => return Err(ImageError::UnsupportedFormat("EXIF stripping only supported for JPEG and WebP formats".to_string())),
+    };
+
+    Ok::<Buffer, ImageError>(Buffer::from(output))
+  })
+  .await
+  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+  .map_err(|e| e.into())
 }

@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <b>Up to 950x faster</b> than alternatives • <b>Native HEIC support</b> • <b>Zero-copy buffers</b> • <b>SIMD-accelerated</b>
+  <b>Up to 950x faster</b> than alternatives • <b>Native HEIC support</b> • <b>EXIF metadata writing</b> • <b>SIMD-accelerated</b>
 </p>
 
 ---
@@ -36,6 +36,7 @@
 | JPEG Metadata | **38x** | Optimized marker extraction |
 | 50 Concurrent Ops | **2.6x** | Rayon thread pool |
 | Transform Pipeline | **1.6x** | Single-pass processing |
+| EXIF Write | **<0.3ms** | Native EXIF embedding |
 | HEIC Support | **Exclusive** | Only lib with native HEIC |
 
 > **bun-image-turbo** is the fastest image processing library for JavaScript. Period.
@@ -81,7 +82,7 @@ Prebuilt binaries are available for **all major platforms** - no compilation nee
 ## Quick Start
 
 ```typescript
-import { metadata, resize, transform, toWebp, blurhash } from 'bun-image-turbo';
+import { metadata, resize, transform, toWebp, blurhash, writeExif } from 'bun-image-turbo';
 
 // Read image
 const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
@@ -108,8 +109,16 @@ const result = await transform(buffer, {
 // Generate blurhash placeholder
 const { hash } = await blurhash(buffer, 4, 3);
 
+// Add EXIF metadata (perfect for AI images)
+const withExif = await writeExif(webp, {
+  imageDescription: 'AI-generated sunset',
+  artist: 'Stable Diffusion XL',
+  software: 'ComfyUI',
+  userComment: JSON.stringify({ prompt: '...', seed: 12345 })
+});
+
 // Save result
-await Bun.write('output.webp', result);
+await Bun.write('output.webp', withExif);
 ```
 
 **[See more examples →](https://nexus-aissam.github.io/bun-image-turbo/examples/)**
@@ -148,6 +157,16 @@ Tested on Apple M1 Pro with Bun 1.3.3 (compared to sharp v0.34.5):
 
 > **sharp does NOT support HEIC/HEIF files!** bun-image-turbo is the only high-performance library with native HEIC support.
 
+### EXIF Metadata (NEW in v1.3.0)
+
+| Operation | JPEG | WebP | Notes |
+|-----------|-----:|-----:|:------|
+| writeExif (simple) | **0.24ms** | **0.10ms** | 3 fields |
+| writeExif (full) | **0.20ms** | **0.05ms** | 10 fields + JSON |
+| stripExif | **0.26ms** | **0.08ms** | Remove all metadata |
+
+> **Perfect for AI-generated images!** Store prompts, seeds, and generation parameters in standard EXIF fields.
+
 **[Full benchmark details →](https://nexus-aissam.github.io/bun-image-turbo/guide/performance)**
 
 ---
@@ -172,6 +191,7 @@ Tested on Apple M1 Pro with Bun 1.3.3 (compared to sharp v0.34.5):
 - **Shrink-on-Decode** - Decode JPEG/HEIC at reduced resolution for faster thumbnails
 - **Adaptive Algorithms** - Auto-selects optimal resize filter based on scale factor
 - **Native HEIC Support** - The only high-performance library with HEIC/HEIF decoding
+- **EXIF Metadata Writing** - Write/strip EXIF data for AI image attribution
 - **Blurhash Generation** - Built-in compact placeholder generation
 - **Multi-Step Resize** - Progressive halving for large scale reductions
 - **Async & Sync APIs** - Both async and sync versions available
@@ -191,8 +211,10 @@ Tested on Apple M1 Pro with Bun 1.3.3 (compared to sharp v0.34.5):
 | `toPng()` | Convert to PNG | [→](https://nexus-aissam.github.io/bun-image-turbo/api/to-png) |
 | `toWebp()` | Convert to WebP | [→](https://nexus-aissam.github.io/bun-image-turbo/api/to-webp) |
 | `blurhash()` | Generate placeholder hash | [→](https://nexus-aissam.github.io/bun-image-turbo/api/blurhash) |
+| `writeExif()` | Write EXIF metadata | [→](https://nexus-aissam.github.io/bun-image-turbo/api/exif) |
+| `stripExif()` | Remove EXIF metadata | [→](https://nexus-aissam.github.io/bun-image-turbo/api/exif) |
 
-All functions have sync variants (`metadataSync`, `resizeSync`, etc.)
+All functions have sync variants (`metadataSync`, `resizeSync`, `writeExifSync`, etc.)
 
 **[Full API Reference →](https://nexus-aissam.github.io/bun-image-turbo/api/)**
 
@@ -252,6 +274,29 @@ bun run batch    # Parallel batch processing
 | [heic-conversion.ts](./examples/heic-conversion.ts) | iPhone photo conversion |
 | [api-endpoint.ts](./examples/api-endpoint.ts) | HTTP image processing server |
 | [batch-processing.ts](./examples/batch-processing.ts) | Parallel multi-file processing |
+
+### EXIF Metadata Example
+
+```typescript
+import { writeExif, toWebp, stripExif } from 'bun-image-turbo';
+
+// Add AI generation metadata to WebP
+const webp = await toWebp(imageBuffer, { quality: 90 });
+const withMetadata = await writeExif(webp, {
+  imageDescription: 'A sunset over mountains',
+  artist: 'Stable Diffusion XL',
+  software: 'ComfyUI',
+  userComment: JSON.stringify({
+    prompt: 'sunset over mountains, 8k',
+    seed: 12345,
+    steps: 30,
+    cfg_scale: 7.5
+  })
+});
+
+// Strip metadata for privacy
+const clean = await stripExif(photoWithGPS);
+```
 
 **[All examples →](https://nexus-aissam.github.io/bun-image-turbo/examples/)**
 
@@ -346,6 +391,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 - [fast_image_resize](https://crates.io/crates/fast_image_resize) - Fast image resizing with Rayon
 - [webp](https://crates.io/crates/webp) - WebP encoding/decoding
 - [libheif-rs](https://crates.io/crates/libheif-rs) - HEIC/HEIF decoding via libheif
+- [img-parts](https://crates.io/crates/img-parts) - EXIF/XMP metadata manipulation
 - [blurhash](https://crates.io/crates/blurhash) - Blurhash generation
 - [napi-rs](https://napi.rs/) - Rust bindings for Node.js
 

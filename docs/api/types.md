@@ -122,10 +122,55 @@ interface TransformOptions {
   blur?: number;    // 0 to 100
   sharpen?: number; // 0 to 100
 
-  // Output format (required)
-  output: OutputOptions;
+  // Output format (optional, defaults to PNG)
+  output?: OutputOptions;
+
+  // EXIF metadata (for JPEG/WebP output)
+  exif?: ExifOptions;
 }
 ```
+
+## ExifOptions
+
+Options for `writeExif()`, `writeExifSync()`, and the `exif` field in `TransformOptions`.
+
+```typescript
+interface ExifOptions {
+  /** Image description / caption / AI prompt */
+  imageDescription?: string;
+  /** Artist / creator name */
+  artist?: string;
+  /** Copyright notice */
+  copyright?: string;
+  /** Software used to create the image */
+  software?: string;
+  /** Date/time in EXIF format (YYYY:MM:DD HH:MM:SS) */
+  dateTime?: string;
+  /** Original date/time in EXIF format */
+  dateTimeOriginal?: string;
+  /** User comment (can contain JSON or other data) */
+  userComment?: string;
+  /** Camera/device make */
+  make?: string;
+  /** Camera/device model */
+  model?: string;
+  /** Orientation (1-8) */
+  orientation?: number;
+}
+```
+
+| Field | EXIF Tag | Description |
+|-------|----------|-------------|
+| `imageDescription` | ImageDescription | Image caption, AI prompt |
+| `artist` | Artist | Creator/photographer name |
+| `copyright` | Copyright | Copyright notice |
+| `software` | Software | Software used to create image |
+| `dateTime` | DateTime | Creation date/time |
+| `dateTimeOriginal` | DateTimeOriginal | Original capture date/time |
+| `userComment` | UserComment | Custom data (supports JSON) |
+| `make` | Make | Device manufacturer |
+| `model` | Model | Device model |
+| `orientation` | Orientation | Image orientation (1-8) |
 
 ## OutputOptions
 
@@ -166,7 +211,8 @@ import type {
   WebpOptions,
   TransformOptions,
   OutputOptions,
-  BlurhashResult
+  BlurhashResult,
+  ExifOptions
 } from 'bun-image-turbo';
 
 // Function signatures
@@ -198,6 +244,12 @@ declare function blurhashSync(
   componentsX?: number,
   componentsY?: number
 ): BlurhashResult;
+
+declare function writeExif(input: Buffer, options: ExifOptions): Promise<Buffer>;
+declare function writeExifSync(input: Buffer, options: ExifOptions): Buffer;
+
+declare function stripExif(input: Buffer): Promise<Buffer>;
+declare function stripExifSync(input: Buffer): Buffer;
 
 declare function version(): string;
 ```

@@ -13,6 +13,8 @@ Complete API documentation for bun-image-turbo.
 | [`toWebp()`](/api/to-webp) | Convert to WebP (lossy or lossless) |
 | [`transform()`](/api/transform) | Apply multiple transformations in one pass |
 | [`blurhash()`](/api/blurhash) | Generate blurhash placeholder string |
+| [`writeExif()`](/api/exif) | Write EXIF metadata to JPEG/WebP |
+| [`stripExif()`](/api/exif#stripexif) | Remove EXIF metadata from images |
 | `version()` | Get library version |
 
 ## Async vs Sync
@@ -28,6 +30,8 @@ All functions have sync variants:
 | `toWebp()` | `toWebpSync()` |
 | `transform()` | `transformSync()` |
 | `blurhash()` | `blurhashSync()` |
+| `writeExif()` | `writeExifSync()` |
+| `stripExif()` | `stripExifSync()` |
 
 ## Quick Examples
 
@@ -44,7 +48,7 @@ import {
 } from 'bun-image-turbo';
 
 // Check version
-console.log(version()); // "1.2.2"
+console.log(version()); // "1.3.0"
 
 // Get metadata (returns many fields - see metadata docs)
 const info = await metadata(buffer);

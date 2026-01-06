@@ -129,6 +129,30 @@ export interface BlurHashResult {
   height: number;
 }
 
+/** EXIF metadata options for writing */
+export interface ExifOptions {
+  /** Image description / caption / AI prompt */
+  imageDescription?: string;
+  /** Artist / creator name */
+  artist?: string;
+  /** Copyright notice */
+  copyright?: string;
+  /** Software used to create the image */
+  software?: string;
+  /** Date/time in EXIF format (YYYY:MM:DD HH:MM:SS) */
+  dateTime?: string;
+  /** Original date/time in EXIF format */
+  dateTimeOriginal?: string;
+  /** User comment (can contain JSON or other data) */
+  userComment?: string;
+  /** Camera/device make */
+  make?: string;
+  /** Camera/device model */
+  model?: string;
+  /** Orientation (1-8) */
+  orientation?: number;
+}
+
 /** Transform options (all-in-one processing) */
 export interface TransformOptions {
   /** Resize options */
@@ -151,6 +175,8 @@ export interface TransformOptions {
   brightness?: number;
   /** Contrast adjustment (-100 to 100) */
   contrast?: number;
+  /** EXIF metadata to write (for JPEG/WebP output) */
+  exif?: ExifOptions;
 }
 
 /** Native module options (internal) */
@@ -170,6 +196,19 @@ export interface NapiOutputOptions {
   avif?: AvifOptions;
 }
 
+export interface NapiExifOptions {
+  imageDescription?: string;
+  artist?: string;
+  copyright?: string;
+  software?: string;
+  dateTime?: string;
+  dateTimeOriginal?: string;
+  userComment?: string;
+  make?: string;
+  model?: string;
+  orientation?: number;
+}
+
 export interface NapiTransformOptions {
   resize?: NapiResizeOptions;
   output?: NapiOutputOptions;
@@ -181,4 +220,5 @@ export interface NapiTransformOptions {
   sharpen?: number;
   brightness?: number;
   contrast?: number;
+  exif?: NapiExifOptions;
 }
