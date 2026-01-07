@@ -110,6 +110,20 @@ jobs:
         with:
           bun-version: latest
 
+      # Install build dependencies for turbojpeg and libheif (macOS)
+      - name: Install build tools (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install nasm cmake libheif pkg-config
+          NASM_PATH=$(brew --prefix nasm)/bin
+          echo "$NASM_PATH" >> $GITHUB_PATH
+          echo "CMAKE_ASM_NASM_COMPILER=$NASM_PATH/nasm" >> $GITHUB_ENV
+
+      # Install NASM for Windows
+      - name: Install build tools (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        uses: ilammy/setup-nasm@v1
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         if: ${{ !matrix.settings.docker }}
