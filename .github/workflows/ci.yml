@@ -38,61 +38,46 @@ jobs:
           # Linux glibc x86_64
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            docker: node:20-bookworm
             build: |-
               set -e
+              apt-get update && apt-get install -y nasm cmake pkg-config build-essential
               # Install latest stable Rust (need 1.85+ for moxcms crate)
               curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
               . "$HOME/.cargo/env"
               rustc --version
-              npm install -g @napi-rs/cli
-              napi build --platform --release --target x86_64-unknown-linux-gnu
+              npm install --ignore-scripts
+              ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-gnu
               strip *.node
 
           # Linux musl x86_64
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            docker: node:20-alpine
             build: |-
               set -e
-              apk add --no-cache curl bash
+              apk add --no-cache nasm cmake make gcc g++ musl-dev libc-dev curl bash perl linux-headers pkgconfig
               # Install latest stable Rust (need 1.85+ for moxcms crate)
               curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
               . "$HOME/.cargo/env"
               rustc --version
-              npm install -g @napi-rs/cli
-              napi build --platform --release --target x86_64-unknown-linux-musl
+              npm install --ignore-scripts
+              ./node_modules/.bin/napi build --platform --release --target x86_64-unknown-linux-musl
               strip *.node
 
-          # Linux glibc aarch64
-          - host: ubuntu-latest
+          # Linux glibc aarch64 - use native ARM runner
+          - host: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+            setup: |-
+              sudo apt-get update
+              sudo apt-get install -y nasm cmake pkg-config
+              rustup default stable
+              rustup update
             build: |-
-              set -e
-              # Install latest stable Rust (need 1.85+ for moxcms crate)
-              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-              . "$HOME/.cargo/env"
-              rustc --version
-              npm install -g @napi-rs/cli
-              napi build --platform --release --target aarch64-unknown-linux-gnu
+              ./node_modules/.bin/napi build --platform --release --target aarch64-unknown-linux-gnu
               strip *.node
 
-          # Linux musl aarch64
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-            build: |-
-              set -e
-              apk add --no-cache curl bash
-              # Install latest stable Rust (need 1.85+ for moxcms crate)
-              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-              . "$HOME/.cargo/env"
-              rustup target add aarch64-unknown-linux-musl
-              rustc --version
-              npm install -g @napi-rs/cli
-              napi build --platform --release --target aarch64-unknown-linux-musl
-              strip *.node
+          # Linux musl aarch64 - skip for CI (complex cross-compilation)
 
           # Windows x64
           - host: windows-latest
@@ -123,6 +108,12 @@ jobs:
       - name: Install build tools (Windows)
         if: ${{ runner.os == 'Windows' }}
         uses: ilammy/setup-nasm@v1
+
+      # Install build tools for Linux native ARM runner
+      - name: Install build tools (Linux native)
+        if: ${{ matrix.settings.setup && !matrix.settings.docker }}
+        run: ${{ matrix.settings.setup }}
+        shell: bash
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
