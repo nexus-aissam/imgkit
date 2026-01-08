@@ -222,9 +222,22 @@ jobs:
       - name: List packages
         run: ls -R ./npm
 
-      - name: Publish
+      - name: Publish platform packages
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+          for dir in npm/*/; do
+            if [ -d "$dir" ]; then
+              echo "Publishing $dir..."
+              cd "$dir"
+              npm publish --access public || true
+              cd ../..
+            fi
+          done
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish main package
+        run: |
           npm publish --access public
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
