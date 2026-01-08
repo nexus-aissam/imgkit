@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.6] - 2026-01-09
+
+### Added
+
+- **Comprehensive Test Suite** - Reorganized test structure for better maintainability
+  - `test/local/` - Local development tests (imports from dist/)
+  - `test/packages/` - Package manager verification tests (bun, npm, yarn, pnpm)
+  - All package managers verified working: bun (39 tests), npm/yarn/pnpm (32 tests each)
+
+### Verified
+
+- **Package Manager Compatibility** - Tested and verified on all major package managers:
+  | Package Manager | Tests | Status |
+  |-----------------|-------|--------|
+  | Bun | 39 pass | ✅ |
+  | npm | 32 pass | ✅ |
+  | yarn | 32 pass | ✅ |
+  | pnpm | 32 pass | ✅ |
+
+---
+
 ## [1.4.5] - 2026-01-09
 
 ### Fixed

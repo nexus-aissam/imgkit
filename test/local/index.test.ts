@@ -15,7 +15,7 @@ import {
   blurhash,
   blurhashSync,
   version,
-} from "../dist/index.mjs";
+} from "../../dist/index.mjs";
 
 let testImage: Buffer;
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "bun:test";
 import { existsSync } from "fs";
 import { join } from "path";
-import { metadata, toJpeg, toWebp, toPng, transform } from "../dist/index.mjs";
+import { metadata, toJpeg, toWebp, toPng, transform } from "../../dist/index.mjs";
 
 const heicPath = join(import.meta.dir, "..", "examples", "image.heic");
 let heicImage: Buffer | null = null;

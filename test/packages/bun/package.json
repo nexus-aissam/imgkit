@@ -1,0 +1,16 @@
+{
+  "name": "bun-image-turbo-bun-test",
+  "version": "1.0.0",
+  "description": "Complete test suite for bun-image-turbo using Bun",
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "test:run": "bun run test.ts"
+  },
+  "dependencies": {
+    "bun-image-turbo": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

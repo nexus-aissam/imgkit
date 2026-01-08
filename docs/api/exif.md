@@ -66,7 +66,7 @@ const withExif = await writeExif(imageBuffer, {
   imageDescription: 'Beautiful sunset over the ocean',
   artist: 'John Doe',
   copyright: 'Copyright 2026 John Doe',
-  software: 'bun-image-turbo v1.4.0'
+  software: 'bun-image-turbo v1.4.6'
 });
 
 await Bun.write('photo-with-exif.jpg', withExif);

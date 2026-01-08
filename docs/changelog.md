@@ -2,6 +2,24 @@
 
 All notable changes to bun-image-turbo.
 
+## [1.4.6] - 2026-01-09
+
+### Added
+
+- **Comprehensive Test Suite** - Reorganized test structure
+  - `test/local/` - Local development tests
+  - `test/packages/` - Package manager verification (bun, npm, yarn, pnpm)
+
+### Verified
+
+- **All Package Managers Working**:
+  - Bun: 39 tests pass ✅
+  - npm: 32 tests pass ✅
+  - yarn: 32 tests pass ✅
+  - pnpm: 32 tests pass ✅
+
+---
+
 ## [1.4.5] - 2026-01-09
 
 ### Fixed

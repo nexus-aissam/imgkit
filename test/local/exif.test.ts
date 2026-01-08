@@ -5,7 +5,7 @@ import {
   stripExif,
   stripExifSync,
   toWebp,
-} from "../src";
+} from "../../src";
 
 let testImage: Buffer;
 
@@ -17,7 +17,7 @@ beforeAll(async () => {
   const pngBuffer = Buffer.from(await response.arrayBuffer());
 
   // Convert to JPEG for EXIF tests (need JPEG format)
-  const { toJpeg } = await import("../src");
+  const { toJpeg } = await import("../../src");
   testImage = await toJpeg(pngBuffer, { quality: 90 });
 });
 
