@@ -16,9 +16,7 @@ pub mod exif_tags {
     pub const ARTIST: u16 = 0x013B;
     pub const COPYRIGHT: u16 = 0x8298;
     pub const EXIF_IFD: u16 = 0x8769;
-    pub const GPS_IFD: u16 = 0x8825;
     pub const DATE_TIME_ORIGINAL: u16 = 0x9003;
-    pub const DATE_TIME_DIGITIZED: u16 = 0x9004;
     pub const USER_COMMENT: u16 = 0x9286;
 }
 
@@ -38,10 +36,6 @@ pub struct ExifWriteOptions {
 }
 
 impl ExifWriteOptions {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn is_empty(&self) -> bool {
         self.image_description.is_none()
             && self.artist.is_none()
@@ -285,6 +279,7 @@ pub fn write_jpeg_exif(data: &[u8], exif_options: &ExifWriteOptions) -> Result<V
 
 /// Write metadata to a PNG image using tEXt chunks
 /// PNG doesn't use EXIF, but we can add tEXt/iTXt chunks for metadata
+#[allow(dead_code)]
 pub fn write_png_metadata(data: &[u8], exif_options: &ExifWriteOptions) -> Result<Vec<u8>, ImageError> {
     if exif_options.is_empty() {
         return Ok(data.to_vec());

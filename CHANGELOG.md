@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-01-08
+
+### Changed
+
+- **Code Reorganization** - Refactored codebase for better maintainability
+  - Split `rust/src/decode.rs` (1,019 lines) into modular `decode/` and `metadata/` directories
+  - Extracted Rust types to `rust/src/types.rs`
+  - Split `src/index.ts` (542 lines) into `loader.ts`, `converters.ts`, and `api/` modules
+  - No API changes - all functionality preserved
+- Removed unused code and fixed Rust compiler warnings
+
+---
+
 ## [1.3.0] - 2026-01-07
 
 ### Added
