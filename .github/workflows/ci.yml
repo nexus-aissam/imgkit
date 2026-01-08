@@ -95,14 +95,19 @@ jobs:
         with:
           bun-version: latest
 
-      # Install build dependencies for turbojpeg and libheif (macOS)
+      # Install build dependencies for turbojpeg (all macOS)
       - name: Install build tools (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: |
-          brew install nasm cmake libheif pkg-config
+          brew install nasm cmake pkg-config
           NASM_PATH=$(brew --prefix nasm)/bin
           echo "$NASM_PATH" >> $GITHUB_PATH
           echo "CMAKE_ASM_NASM_COMPILER=$NASM_PATH/nasm" >> $GITHUB_ENV
+
+      # Install libheif only for ARM64 macOS (HEIC support)
+      - name: Install libheif (macOS ARM64 only)
+        if: ${{ runner.os == 'macOS' && matrix.settings.target == 'aarch64-apple-darwin' }}
+        run: brew install libheif
 
       # Install NASM for Windows
       - name: Install build tools (Windows)
