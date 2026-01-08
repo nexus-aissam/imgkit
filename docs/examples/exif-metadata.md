@@ -17,7 +17,7 @@ const withExif = await writeExif(buffer, {
   imageDescription: 'Sunset over the Pacific Ocean',
   artist: 'John Doe',
   copyright: 'Copyright 2026 John Doe. All rights reserved.',
-  software: 'bun-image-turbo v1.3.1',
+  software: 'bun-image-turbo v1.4.0',
   dateTime: '2026:01:07 14:30:00'
 });
 

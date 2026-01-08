@@ -35,7 +35,7 @@ pub fn metadata_sync(input: Buffer) -> Result<ImageMetadata> {
 pub fn resize_sync(input: Buffer, options: ResizeOptions) -> Result<Buffer> {
   // Use scale-on-decode for JPEG images - massive speedup for large images
   let img = decode::decode_image_with_target(&input, options.width, options.height)?;
-  let resized = resize::resize_image(&img, &options)?;
+  let resized = resize::resize_image(img, &options)?;
 
   // Default to PNG for resize output
   let output = encode::encode_png(&resized, None)?;
@@ -113,7 +113,7 @@ pub async fn resize(input: Buffer, options: ResizeOptions) -> Result<Buffer> {
   tokio::task::spawn_blocking(move || {
     // Use scale-on-decode for JPEG images - massive speedup for large images
     let img = decode::decode_image_with_target(&input, options.width, options.height)?;
-    let resized = resize::resize_image(&img, &options)?;
+    let resized = resize::resize_image(img, &options)?;
     let output = encode::encode_png(&resized, None)?;
     Ok::<Buffer, ImageError>(Buffer::from(output))
   })

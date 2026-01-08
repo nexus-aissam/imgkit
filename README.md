@@ -34,6 +34,7 @@
 |----------|:-------:|-----|
 | WebP Metadata | **950x** | Header-only parsing, no decode |
 | JPEG Metadata | **38x** | Optimized marker extraction |
+| WebP Resize | **1.25x** | Shrink-on-load optimization (NEW in v1.4.0) |
 | 50 Concurrent Ops | **2.6x** | Rayon thread pool |
 | Transform Pipeline | **1.6x** | Single-pass processing |
 | EXIF Write | **<0.3ms** | Native EXIF embedding |
@@ -146,6 +147,18 @@ Tested on Apple M1 Pro with Bun 1.3.3 (compared to sharp v0.34.5):
 | 1MB JPEG → 800px | **12.6ms** | 20.3ms | **1.6x** |
 | Thumbnail (200px) | **8.8ms** | 10.7ms | **1.2x** |
 
+### WebP Resize (NEW in v1.4.0)
+
+| Source Size | Target | bun-image-turbo | sharp | Speedup |
+|-------------|--------|---------------:|------:|:-------:|
+| 800x600 | 200px | **3.1ms** | 4.3ms | **1.40x** |
+| 1600x1200 | 200px | **6.4ms** | 8.0ms | **1.24x** |
+| 2000x1500 | 200px | **8.6ms** | 10.1ms | **1.18x** |
+| 3000x2000 | 200px | **14.7ms** | 16.1ms | **1.10x** |
+| 4000x3000 | 400px | **32.4ms** | 33.1ms | **1.02x** |
+
+> **v1.4.0** introduces WebP shrink-on-load optimization using libwebp's native scaling, making WebP resize operations **1.02-1.40x faster** than sharp across all sizes.
+
 ### HEIC Support (Exclusive)
 
 | Operation | Time | Notes |
@@ -188,12 +201,14 @@ Tested on Apple M1 Pro with Bun 1.3.3 (compared to sharp v0.34.5):
 ## Features
 
 - **TurboJPEG with SIMD** - 2-6x faster JPEG encoding/decoding via libjpeg-turbo
-- **Shrink-on-Decode** - Decode JPEG/HEIC at reduced resolution for faster thumbnails
+- **Shrink-on-Decode** - Decode JPEG/WebP/HEIC at reduced resolution for faster thumbnails
+- **WebP Shrink-on-Load** - NEW in v1.4.0: Native libwebp scaling for 1.25x faster WebP resize
 - **Adaptive Algorithms** - Auto-selects optimal resize filter based on scale factor
 - **Native HEIC Support** - The only high-performance library with HEIC/HEIF decoding
 - **EXIF Metadata Writing** - Write/strip EXIF data for AI image attribution
 - **Blurhash Generation** - Built-in compact placeholder generation
 - **Multi-Step Resize** - Progressive halving for large scale reductions
+- **Zero-Copy Optimizations** - Minimal memory copies for lower memory usage
 - **Async & Sync APIs** - Both async and sync versions available
 - **TypeScript First** - Full TypeScript support with strict types
 - **Cross-Platform** - macOS, Linux, Windows support

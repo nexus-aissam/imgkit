@@ -32,7 +32,7 @@ pub fn encode_jpeg(img: &DynamicImage, options: Option<&JpegOptions>) -> Result<
   Ok(output.to_vec())
 }
 
-/// Encode image to PNG - optimized
+/// Encode image to PNG - optimized to avoid unnecessary clones
 /// Uses RGB when no alpha channel present (25% less data to process)
 pub fn encode_png(img: &DynamicImage, options: Option<&PngOptions>) -> Result<Vec<u8>, ImageError> {
   let compression = options.and_then(|o| o.compression).unwrap_or(6);
@@ -53,15 +53,22 @@ pub fn encode_png(img: &DynamicImage, options: Option<&PngOptions>) -> Result<Ve
     FilterType::Adaptive
   };
 
-  // Check if image has alpha - use RGB if not (faster encoding)
-  let has_alpha = img.color().has_alpha();
-
   // Pre-allocate buffer
   let (width, height) = img.dimensions();
+  let has_alpha = img.color().has_alpha();
   let raw_size = (width as usize) * (height as usize) * if has_alpha { 4 } else { 3 };
   let mut output: Vec<u8> = Vec::with_capacity(raw_size / 2); // PNG typically compresses well
 
-  if has_alpha {
+  // Try to use existing format without conversion (zero-copy path)
+  if let Some(rgba) = img.as_rgba8() {
+    let encoder = PngEncoder::new_with_quality(&mut output, compression_type, filter_type);
+    encoder.write_image(rgba, width, height, ExtendedColorType::Rgba8)
+      .map_err(|e| ImageError::EncodeError(format!("PNG encode failed: {}", e)))?;
+  } else if let Some(rgb) = img.as_rgb8() {
+    let encoder = PngEncoder::new_with_quality(&mut output, compression_type, filter_type);
+    encoder.write_image(rgb, width, height, ExtendedColorType::Rgb8)
+      .map_err(|e| ImageError::EncodeError(format!("PNG encode failed: {}", e)))?;
+  } else if has_alpha {
     let rgba = img.to_rgba8();
     let encoder = PngEncoder::new_with_quality(&mut output, compression_type, filter_type);
     encoder.write_image(&rgba, width, height, ExtendedColorType::Rgba8)
@@ -76,33 +83,32 @@ pub fn encode_png(img: &DynamicImage, options: Option<&PngOptions>) -> Result<Ve
   Ok(output)
 }
 
-/// Encode image to WebP - already optimized (uses libwebp)
+/// Encode image to WebP - optimized to avoid unnecessary clones
 pub fn encode_webp(img: &DynamicImage, options: Option<&WebPOptions>) -> Result<Vec<u8>, ImageError> {
   let quality = options.and_then(|o| o.quality).unwrap_or(80) as f32;
   let lossless = options.and_then(|o| o.lossless).unwrap_or(false);
+  let (width, height) = img.dimensions();
 
-  // Check if alpha is needed
-  let has_alpha = img.color().has_alpha();
-
-  let webp_data = if has_alpha {
+  // Try to use existing format without conversion (zero-copy path)
+  // This avoids cloning when image is already RGB8 or RGBA8
+  let webp_data = if let Some(rgba) = img.as_rgba8() {
+    // Image is already RGBA8 - use directly without clone
+    let encoder = webp::Encoder::from_rgba(rgba, width, height);
+    if lossless { encoder.encode_lossless() } else { encoder.encode(quality) }
+  } else if let Some(rgb) = img.as_rgb8() {
+    // Image is already RGB8 - use directly without clone
+    let encoder = webp::Encoder::from_rgb(rgb, width, height);
+    if lossless { encoder.encode_lossless() } else { encoder.encode(quality) }
+  } else if img.color().has_alpha() {
+    // Need to convert to RGBA8
     let rgba = img.to_rgba8();
-    let (width, height) = (rgba.width(), rgba.height());
     let encoder = webp::Encoder::from_rgba(&rgba, width, height);
-    if lossless {
-      encoder.encode_lossless()
-    } else {
-      encoder.encode(quality)
-    }
+    if lossless { encoder.encode_lossless() } else { encoder.encode(quality) }
   } else {
-    // Use RGB path for non-alpha images (faster)
+    // Need to convert to RGB8
     let rgb = img.to_rgb8();
-    let (width, height) = (rgb.width(), rgb.height());
     let encoder = webp::Encoder::from_rgb(&rgb, width, height);
-    if lossless {
-      encoder.encode_lossless()
-    } else {
-      encoder.encode(quality)
-    }
+    if lossless { encoder.encode_lossless() } else { encoder.encode(quality) }
   };
 
   Ok(webp_data.to_vec())

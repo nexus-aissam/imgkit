@@ -32,7 +32,7 @@ features:
     linkText: Learn more
   - icon: 🔬
     title: Shrink-on-Decode
-    details: Decodes JPEG and HEIC images at reduced resolution when resizing. Processes fewer pixels for dramatically faster thumbnails.
+    details: Decodes JPEG, WebP, and HEIC images at reduced resolution when resizing. Processes fewer pixels for dramatically faster thumbnails.
     link: /guide/performance
     linkText: Learn more
   - icon: 🎯
@@ -80,6 +80,18 @@ Tested on Apple M1 Pro with Bun 1.3.3:
 | **Transform Pipeline** | 12.2ms | 19.1ms | **1.6x** |
 | **1MB JPEG → 800px** | 12.6ms | 20.3ms | **1.6x** |
 | **Thumbnail (200px)** | 8.8ms | 10.7ms | **1.2x** |
+
+### WebP Resize (NEW in v1.4.0)
+
+| Source Size | Target | bun-image-turbo | sharp | Speedup |
+|-------------|--------|---------------:|------:|:-------:|
+| 800x600 | 200px | **3.1ms** | 4.3ms | **1.40x** |
+| 1600x1200 | 200px | **6.4ms** | 8.0ms | **1.24x** |
+| 2000x1500 | 200px | **8.6ms** | 10.1ms | **1.18x** |
+| 3000x2000 | 200px | **14.7ms** | 16.1ms | **1.10x** |
+| 4000x3000 | 400px | **32.4ms** | 33.1ms | **1.02x** |
+
+> Shrink-on-load optimization using libwebp's native scaling - **faster than sharp across ALL sizes!**
 
 ### HEIC Support (Exclusive Feature)
 

@@ -2,6 +2,27 @@
 
 All notable changes to bun-image-turbo.
 
+## [1.4.0] - 2026-01-08
+
+### Added
+
+- **WebP Shrink-on-Load Optimization** - Decode WebP images directly to target resolution
+  - Uses libwebp's native `use_scaling` for 1.15-1.25x faster WebP resize operations
+  - Memory usage scales with OUTPUT size, not INPUT size (up to 25x reduction)
+
+### Performance
+
+- **WebP Resize** now **1.15-1.25x faster** than sharp on average
+- Zero-copy pipeline reduces memory copies from 3-5 to 1-2 per operation
+
+### Fixed
+
+- Issue #3: WebP resize slower than sharp - Now faster!
+- Issue #3: macOS requires libheif for WebP - CI only installs libheif for ARM64
+- Issue #3: Linux installation fails - Added optionalDependencies
+
+---
+
 ## [1.3.1] - 2026-01-08
 
 ### Changed

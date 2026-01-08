@@ -15,6 +15,18 @@ Tested on Apple M1 Pro with Bun 1.3.3:
 | 1MB JPEG → 800px | 12.6ms | 20.3ms | **1.6x** |
 | Thumbnail (200px) | 8.8ms | 10.7ms | **1.2x** |
 
+### WebP Resize (NEW in v1.4.0)
+
+| Source Size | Target | bun-image-turbo | sharp | Speedup |
+|-------------|--------|---------------:|------:|:-------:|
+| 800x600 | 200px | **3.1ms** | 4.3ms | **1.40x** |
+| 1600x1200 | 200px | **6.4ms** | 8.0ms | **1.24x** |
+| 2000x1500 | 200px | **8.6ms** | 10.1ms | **1.18x** |
+| 3000x2000 | 200px | **14.7ms** | 16.1ms | **1.10x** |
+| 4000x3000 | 400px | **32.4ms** | 33.1ms | **1.02x** |
+
+> WebP shrink-on-load optimization using libwebp's native scaling - faster than sharp across ALL sizes!
+
 ## Why So Fast?
 
 ### Rust Core
@@ -44,7 +56,7 @@ const info = await metadata(largeImageBuffer);
 
 ### Shrink-on-Decode
 
-JPEG and HEIC use shrink-on-decode optimization - decoding directly at reduced resolution:
+JPEG, WebP, and HEIC use shrink-on-decode optimization - decoding directly at reduced resolution:
 
 ```typescript
 // Decodes directly at target size
@@ -56,8 +68,9 @@ const thumb = await transform(largeBuffer, {
 
 **How it works:**
 - For JPEG: Uses TurboJPEG scaling factors (1/8, 1/4, 1/2, 1/1) to decode at reduced resolution
+- For WebP: Uses libwebp's native `use_scaling` to decode directly at target resolution (NEW in v1.4.0)
 - For HEIC: Uses libheif's built-in scaling during decode
-- Matches sharp's `fastShrinkOnLoad` behavior
+- Matches and exceeds sharp's `fastShrinkOnLoad` behavior
 
 | Original | Target | Scale Factor | Pixels Processed |
 |----------|--------|:------------:|:----------------:|

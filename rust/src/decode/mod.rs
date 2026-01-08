@@ -2,11 +2,13 @@
 //!
 //! Uses turbojpeg (libjpeg-turbo with SIMD) for fastest JPEG decode.
 //! Uses mozjpeg for shrink-on-load when downscaling (decode at reduced resolution).
+//! Uses libwebp for WebP shrink-on-load (decode directly to target resolution).
 //! Uses libheif for HEIC/HEIF decoding (iPhone photos) - optional feature.
 
 mod generic;
 mod heic;
 mod jpeg;
+mod webp;
 
 use image::{DynamicImage, ImageFormat};
 
@@ -16,6 +18,7 @@ use crate::metadata;
 pub use generic::decode_with_image_crate_safe;
 pub use heic::decode_heic_with_target;
 pub use jpeg::{decode_jpeg_fast, decode_jpeg_with_shrink};
+pub use webp::{decode_webp_fast, decode_webp_with_target};
 
 // Re-export metadata functions for backward compatibility
 pub use metadata::{detect_format, get_metadata, is_heic};
@@ -48,6 +51,14 @@ pub fn decode_image_with_target(
         decode_jpeg_with_shrink(data, target_width, target_height)
       } else {
         decode_jpeg_fast(data)
+      }
+    }
+    ImageFormat::WebP => {
+      // Use libwebp with shrink-on-load when we have target dimensions
+      if target_width.is_some() || target_height.is_some() {
+        decode_webp_with_target(data, target_width, target_height)
+      } else {
+        decode_webp_fast(data)
       }
     }
     _ => decode_with_image_crate_safe(data),

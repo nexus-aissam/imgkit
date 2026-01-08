@@ -18,9 +18,9 @@ pub fn transform_image(input: &[u8], options: &TransformOptions) -> Result<Buffe
 
   // Apply transformations in order
 
-  // 1. Resize (if specified)
+  // 1. Resize (if specified) - pass ownership to avoid clone
   if let Some(ref resize_opts) = options.resize {
-    img = resize::resize_image(&img, resize_opts)?;
+    img = resize::resize_image(img, resize_opts)?;
   }
 
   // 2. Rotate (if specified)

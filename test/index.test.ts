@@ -226,4 +226,78 @@ describe("bun-image-turbo", () => {
       await expect(metadata(emptyBuffer)).rejects.toThrow();
     });
   });
+
+  describe("WebP shrink-on-load", () => {
+    let webpImage: Buffer;
+
+    beforeAll(async () => {
+      // Convert test image to WebP for shrink-on-load tests
+      webpImage = await toWebp(testImage, { quality: 90 });
+    });
+
+    it("should resize WebP image (async)", async () => {
+      const resized = await resize(webpImage, { width: 200 });
+      const meta = await metadata(resized);
+
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(150); // Maintains aspect ratio (800x600 -> 200x150)
+    });
+
+    it("should resize WebP image (sync)", () => {
+      const resized = resizeSync(webpImage, { width: 200 });
+      const meta = metadataSync(resized);
+
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(150);
+    });
+
+    it("should transform WebP with resize and output WebP", async () => {
+      const result = await transform(webpImage, {
+        resize: { width: 200 },
+        output: { format: "webp", webp: { quality: 80 } },
+      });
+
+      const meta = await metadata(result);
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(150);
+      expect(meta.format).toBe("webp");
+    });
+
+    it("should handle large downscale with shrink-on-load", async () => {
+      // Create a larger WebP image for testing aggressive downscale
+      const largeWebp = await transform(testImage, {
+        resize: { width: 1600, height: 1200 },
+        output: { format: "webp" },
+      });
+
+      // Downscale to small thumbnail (8x reduction)
+      const thumbnail = await transform(largeWebp, {
+        resize: { width: 200 },
+        output: { format: "webp" },
+      });
+
+      const meta = await metadata(thumbnail);
+      expect(meta.width).toBe(200);
+      expect(meta.format).toBe("webp");
+    });
+
+    it("should resize WebP with specific height", async () => {
+      const resized = await resize(webpImage, { height: 150 });
+      const meta = await metadata(resized);
+
+      expect(meta.height).toBe(150);
+      expect(meta.width).toBe(200); // Maintains aspect ratio
+    });
+
+    it("should resize WebP with both width and height", async () => {
+      const result = await transform(webpImage, {
+        resize: { width: 100, height: 100, fit: "fill" },
+        output: { format: "webp" },
+      });
+
+      const meta = await metadata(result);
+      expect(meta.width).toBe(100);
+      expect(meta.height).toBe(100);
+    });
+  });
 });

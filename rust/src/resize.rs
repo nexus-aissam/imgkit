@@ -110,11 +110,11 @@ fn calculate_dimensions(
   }
 }
 
-/// Resize an image - optimized version
+/// Resize an image - optimized version (takes ownership to avoid clone)
 /// Uses RGB for images without alpha (faster)
 /// Uses adaptive algorithm selection based on scale factor
 /// For large downscales, uses multi-step resize for better performance
-pub fn resize_image(img: &DynamicImage, options: &ResizeOptions) -> Result<DynamicImage, ImageError> {
+pub fn resize_image(img: DynamicImage, options: &ResizeOptions) -> Result<DynamicImage, ImageError> {
   let (src_width, src_height) = img.dimensions();
 
   let (dst_width, dst_height) = calculate_dimensions(
@@ -124,6 +124,13 @@ pub fn resize_image(img: &DynamicImage, options: &ResizeOptions) -> Result<Dynam
     options.height,
     &options.fit,
   )?;
+
+  // OPTIMIZATION: Skip resize if image already at target dimensions
+  // This happens when shrink-on-load (JPEG/WebP/HEIC) already decoded to target size
+  // No clone needed since we own the image!
+  if src_width == dst_width && src_height == dst_height {
+    return Ok(img);
+  }
 
   // Calculate scale factor for adaptive algorithm selection
   let scale_factor = (dst_width as f64 / src_width as f64)
@@ -143,25 +150,25 @@ pub fn resize_image(img: &DynamicImage, options: &ResizeOptions) -> Result<Dynam
   let resize_options = FrResizeOptions::new().resize_alg(algorithm);
 
   if has_alpha {
-    resize_rgba(img, src_width, src_height, dst_width, dst_height, &resize_options)
+    resize_rgba(&img, src_width, src_height, dst_width, dst_height, &resize_options)
   } else {
-    resize_rgb(img, src_width, src_height, dst_width, dst_height, &resize_options)
+    resize_rgb(&img, src_width, src_height, dst_width, dst_height, &resize_options)
   }
 }
 
-/// Multi-step resize for large scale reductions
+/// Multi-step resize for large scale reductions (takes ownership to avoid clone)
 /// Uses Box filter for fast halving until close to target, then final Bilinear pass
 /// This is much faster than single-step convolution for large reductions
 /// Box filter is ideal for downscaling as it acts as a proper averaging filter
 fn resize_multi_step(
-  img: &DynamicImage,
+  img: DynamicImage,
   src_width: u32,
   src_height: u32,
   dst_width: u32,
   dst_height: u32,
   has_alpha: bool,
 ) -> Result<DynamicImage, ImageError> {
-  let mut current_img = img.clone();
+  let mut current_img = img; // Take ownership directly, no clone!
   let mut current_width = src_width;
   let mut current_height = src_height;
 
