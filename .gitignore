@@ -6,9 +6,6 @@ dist/
 *.node
 target/
 
-# npm packages
-npm/
-
 # Logs
 *.log
 

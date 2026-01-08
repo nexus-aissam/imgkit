@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.5] - 2026-01-09
+
+### Fixed
+
+- **ESM/CJS Native Binding Loading** - Fixed native module loading in Node.js ESM context
+  - Use `createRequire(import.meta.url)` for ESM modules
+  - Proper fallback to native `require` for CJS context
+  - Fixes "Cannot find package" errors when using `import` in Node.js
+
+### Changed
+
+- Updated optional dependencies to ^1.4.5
+
+---
+
 ## [1.4.0] - 2026-01-08
 
 ### Added

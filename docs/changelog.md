@@ -2,6 +2,17 @@
 
 All notable changes to bun-image-turbo.
 
+## [1.4.5] - 2026-01-09
+
+### Fixed
+
+- **ESM/CJS Native Binding Loading** - Fixed native module loading in Node.js ESM context
+  - Use `createRequire(import.meta.url)` for ESM modules
+  - Proper fallback to native `require` for CJS context
+  - Fixes "Cannot find package" errors when using `import` in Node.js
+
+---
+
 ## [1.4.0] - 2026-01-08
 
 ### Added

@@ -1,0 +1,17 @@
+# Test folders (prevent recursive symlink issues)
+test/
+temp-test/
+
+# Development files
+.github/
+benchmarks/
+examples/
+src/
+*.node
+
+# Config files
+.gitignore
+tsconfig.json
+Cargo.toml
+Cargo.lock
+build.rs

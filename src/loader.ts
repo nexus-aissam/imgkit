@@ -7,6 +7,15 @@
 import { existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { createRequire } from "module";
+
+// Create require function that works in both ESM and CJS contexts
+// In ESM (Node.js): import.meta.url exists, use createRequire
+// In CJS: import.meta.url is undefined, use native require
+const nativeRequire =
+  typeof import.meta?.url === "string"
+    ? createRequire(import.meta.url)
+    : (typeof require !== "undefined" ? require : null);
 
 /**
  * Get current directory for ESM
@@ -69,7 +78,7 @@ export function loadNativeBinding(): any {
   for (const modulePath of possiblePaths) {
     try {
       if (existsSync(modulePath)) {
-        return require(modulePath);
+        return nativeRequire!(modulePath);
       }
     } catch {
       continue;
@@ -78,7 +87,7 @@ export function loadNativeBinding(): any {
 
   // Try requiring the optional package directly (Bun/Node resolution)
   try {
-    return require(optionalPackageName);
+    return nativeRequire!(optionalPackageName);
   } catch {
     // Ignore and fall through to error
   }

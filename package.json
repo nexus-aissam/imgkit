@@ -1,6 +1,6 @@
 {
   "name": "bun-image-turbo",
-  "version": "1.4.0",
+  "version": "1.4.5",
   "author": "Aissam Irhir <aissamirhir@gmail.com>",
   "repository": {
     "type": "git",
@@ -65,13 +65,13 @@
   ],
   "license": "MIT",
   "optionalDependencies": {
-    "bun-image-turbo-darwin-x64": "^1.4.0",
-    "bun-image-turbo-darwin-arm64": "^1.4.0",
-    "bun-image-turbo-win32-x64-msvc": "^1.4.0",
-    "bun-image-turbo-win32-arm64-msvc": "^1.4.0",
-    "bun-image-turbo-linux-x64-gnu": "^1.4.0",
-    "bun-image-turbo-linux-arm64-gnu": "^1.4.0",
-    "bun-image-turbo-linux-x64-musl": "^1.4.0"
+    "bun-image-turbo-darwin-x64": "^1.4.5",
+    "bun-image-turbo-darwin-arm64": "^1.4.5",
+    "bun-image-turbo-win32-x64-msvc": "^1.4.5",
+    "bun-image-turbo-win32-arm64-msvc": "^1.4.5",
+    "bun-image-turbo-linux-x64-gnu": "^1.4.5",
+    "bun-image-turbo-linux-arm64-gnu": "^1.4.5",
+    "bun-image-turbo-linux-x64-musl": "^1.4.5"
   },
   "napi": {
     "name": "image-turbo",
@@ -94,7 +94,14 @@
     "build:all": "bun run build && bun run build:ts",
     "artifacts": "napi artifacts",
     "version": "napi version",
-    "test": "bun test",
+    "test": "bun test test/local",
+    "test:local": "bun test test/local",
+    "test:bun": "cd test/packages/bun && bun install && bun test",
+    "test:npm": "cd test/packages/npm && npm install && npm test",
+    "test:yarn": "cd test/packages/yarn && yarn install && yarn test",
+    "test:pnpm": "cd test/packages/pnpm && pnpm install && pnpm test",
+    "test:packages": "bun run test:bun && bun run test:npm && bun run test:yarn && bun run test:pnpm",
+    "test:all": "bun run test:local && bun run test:packages",
     "bench": "bun run benchmarks/bench.ts",
     "lint": "eslint src",
     "clean": "rm -rf dist *.node npm"
