@@ -101,9 +101,11 @@ const result = await transform(buffer, {
 await Bun.write('output.webp', result);
 ```
 
-## Generate Blurhash
+## Generate Placeholders
 
-Create compact image placeholders:
+Create compact image placeholders for progressive loading:
+
+### BlurHash
 
 ```typescript
 import { blurhash } from 'bun-image-turbo';
@@ -111,6 +113,31 @@ import { blurhash } from 'bun-image-turbo';
 const { hash, width, height } = await blurhash(buffer, 4, 3);
 console.log(hash); // "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
 ```
+
+### ThumbHash (Recommended)
+
+ThumbHash produces better quality placeholders with alpha channel support:
+
+```typescript
+import { thumbhash } from 'bun-image-turbo';
+
+const { dataUrl, hash, width, height, hasAlpha } = await thumbhash(buffer);
+
+// Use directly in HTML/CSS
+const html = `<img src="${dataUrl}" alt="placeholder" />`;
+
+// Or store the compact hash (~25 bytes) in your database
+await db.save({ id: 1, thumbhash: hash });
+```
+
+::: tip Why ThumbHash?
+
+- **Alpha channel support** - Works with transparent PNGs
+- **Aspect ratio preserved** - No stretching
+- **Better color accuracy** - Smoother gradients
+- **Ready-to-use dataUrl** - No decoding needed on frontend
+
+:::
 
 ## HEIC Conversion (macOS ARM64)
 

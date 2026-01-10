@@ -1,6 +1,6 @@
 [package]
 name = "image-turbo"
-version = "1.4.6"
+version = "1.5.0"
 edition = "2021"
 license = "MIT"
 authors = ["Aissam Irhir <aissamirhir@gmail.com>"]
@@ -45,6 +45,9 @@ thiserror = "2"
 
 # For blurhash generation
 blurhash = "0.2"
+
+# For thumbhash generation (better placeholders with alpha support)
+thumbhash = "0.1"
 
 # For EXIF/metadata writing (WebP, JPEG, PNG)
 img-parts = "0.3"

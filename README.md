@@ -1,35 +1,52 @@
+<div align="center">
+
 # bun-image-turbo
 
-**High-performance image processing for Bun and Node.js** — Built with Rust and napi-rs for maximum speed.
+**High-performance image processing for Bun and Node.js**
 
-[![npm version](https://badge.fury.io/js/bun-image-turbo.svg)](https://www.npmjs.com/package/bun-image-turbo)
-[![Build & Publish](https://github.com/nexus-aissam/bun-image-turbo/actions/workflows/build.yml/badge.svg)](https://github.com/nexus-aissam/bun-image-turbo/actions/workflows/build.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![Bun](https://img.shields.io/badge/Bun-1.0+-orange.svg)](https://bun.sh/)
+*Built with Rust and napi-rs for maximum speed*
 
----
+[![npm version](https://img.shields.io/npm/v/bun-image-turbo?style=flat-square&color=f97316)](https://www.npmjs.com/package/bun-image-turbo)
+[![downloads](https://img.shields.io/npm/dm/bun-image-turbo?style=flat-square&color=10b981)](https://www.npmjs.com/package/bun-image-turbo)
+[![CI](https://img.shields.io/github/actions/workflow/status/nexus-aissam/bun-image-turbo/ci.yml?style=flat-square&label=CI)](https://github.com/nexus-aissam/bun-image-turbo/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-## Why bun-image-turbo?
+<br />
 
-- **Up to 950x faster** than alternatives for metadata extraction
-- **Native HEIC/HEIF support** — The only high-performance library with Apple format decoding
-- **EXIF metadata writing** — Perfect for AI-generated image attribution
-- **SIMD-accelerated** — TurboJPEG with SSE2/AVX2/NEON
-- **Zero dependencies** — Prebuilt binaries, no compilation needed
+[Documentation](https://nexus-aissam.github.io/bun-image-turbo/) · [API Reference](https://nexus-aissam.github.io/bun-image-turbo/api/) · [Examples](https://nexus-aissam.github.io/bun-image-turbo/examples/) · [Changelog](https://nexus-aissam.github.io/bun-image-turbo/changelog)
 
-### Performance Highlights
+</div>
 
-| Operation | vs sharp | Details |
-|-----------|:--------:|---------|
-| WebP Metadata | **950x faster** | Header-only parsing |
-| JPEG Metadata | **38x faster** | Optimized marker extraction |
-| WebP Resize | **1.25x faster** | Shrink-on-load optimization |
-| Concurrent Ops | **2.6x faster** | Rayon thread pool |
-| HEIC Support | **Exclusive** | Only lib with native HEIC |
+<br />
 
----
+## Highlights
+
+<table>
+<tr>
+<td width="50%">
+
+### Performance
+
+- **950x faster** metadata extraction
+- **2.6x faster** concurrent operations
+- **SIMD-accelerated** JPEG codec
+- **Zero-copy** buffer handling
+
+</td>
+<td width="50%">
+
+### Features
+
+- **Native HEIC/HEIF** support
+- **ThumbHash & BlurHash** placeholders
+- **EXIF metadata** read/write
+- **Zero dependencies** runtime
+
+</td>
+</tr>
+</table>
+
+<br />
 
 ## Installation
 
@@ -37,26 +54,23 @@
 # Bun (recommended)
 bun add bun-image-turbo
 
-# npm
+# npm / yarn / pnpm
 npm install bun-image-turbo
-
-# yarn
-yarn add bun-image-turbo
-
-# pnpm
-pnpm add bun-image-turbo
 ```
 
-### Verified Package Managers
+<details>
+<summary><strong>Verified Package Managers</strong></summary>
 
 | Package Manager | Status | Tests |
 |-----------------|:------:|------:|
-| Bun | ✅ | 39 pass |
+| Bun | ✅ | 56 pass |
 | npm | ✅ | 32 pass |
 | yarn | ✅ | 32 pass |
 | pnpm | ✅ | 32 pass |
 
----
+</details>
+
+<br />
 
 ## Quick Start
 
@@ -64,9 +78,8 @@ pnpm add bun-image-turbo
 import {
   metadata,
   resize,
-  transform,
   toWebp,
-  blurhash,
+  thumbhash,
   writeExif
 } from 'bun-image-turbo';
 
@@ -83,87 +96,157 @@ const thumbnail = await resize(buffer, { width: 200 });
 // Convert to WebP (50-80% smaller than JPEG)
 const webp = await toWebp(buffer, { quality: 85 });
 
-// Full transform pipeline
-const result = await transform(buffer, {
-  resize: { width: 800, height: 600, fit: 'Cover' },
-  rotate: 90,
-  grayscale: true,
-  output: { format: 'Webp', webp: { quality: 85 } }
-});
+// Generate ThumbHash placeholder (better than BlurHash)
+const { dataUrl } = await thumbhash(buffer);
+// Use directly: <img src={dataUrl} />
 
-// Generate blurhash placeholder
-const { hash } = await blurhash(buffer, 4, 3);
-
-// Add EXIF metadata (perfect for AI-generated images)
+// Add EXIF metadata (perfect for AI images)
 const withExif = await writeExif(webp, {
-  imageDescription: 'AI-generated landscape',
   artist: 'Stable Diffusion XL',
-  software: 'ComfyUI',
-  userComment: JSON.stringify({ prompt: '...', seed: 12345 })
+  software: 'ComfyUI'
 });
 ```
 
----
+<br />
 
 ## API Reference
 
-### Core Functions
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+<th align="center">Async</th>
+<th align="center">Sync</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><code>metadata()</code></td><td>Get image dimensions, format, color info</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>resize()</code></td><td>Resize image with multiple algorithms</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>transform()</code></td><td>Multi-operation pipeline</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>toJpeg()</code></td><td>Convert to JPEG</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>toPng()</code></td><td>Convert to PNG</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>toWebp()</code></td><td>Convert to WebP</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>blurhash()</code></td><td>Generate BlurHash placeholder</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>thumbhash()</code></td><td>Generate ThumbHash placeholder</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>writeExif()</code></td><td>Write EXIF metadata</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>stripExif()</code></td><td>Remove EXIF metadata</td><td align="center">✅</td><td align="center">✅</td></tr>
+</tbody>
+</table>
 
-| Function | Description | Async | Sync |
-|----------|-------------|:-----:|:----:|
-| `metadata()` | Get image dimensions, format, color info | ✅ | ✅ |
-| `resize()` | Resize image (outputs PNG) | ✅ | ✅ |
-| `transform()` | Multi-operation pipeline | ✅ | ✅ |
-| `toJpeg()` | Convert to JPEG | ✅ | ✅ |
-| `toPng()` | Convert to PNG | ✅ | ✅ |
-| `toWebp()` | Convert to WebP | ✅ | ✅ |
-| `blurhash()` | Generate placeholder hash | ✅ | ✅ |
-| `writeExif()` | Write EXIF metadata | ✅ | ✅ |
-| `stripExif()` | Remove EXIF metadata | ✅ | ✅ |
+> **Note:** All functions have sync variants: `metadataSync()`, `resizeSync()`, etc.
 
-### Sync Variants
+<br />
 
-All functions have synchronous versions: `metadataSync()`, `resizeSync()`, `transformSync()`, etc.
+## Image Placeholders
 
----
+<table>
+<tr>
+<th width="50%">ThumbHash <sup>NEW</sup></th>
+<th width="50%">BlurHash</th>
+</tr>
+<tr>
+<td>
+
+```typescript
+const { dataUrl, hash } = await thumbhash(buffer);
+
+// Ready-to-use data URL
+element.style.backgroundImage = `url(${dataUrl})`;
+
+// Or store the compact hash (~25 bytes)
+await db.save({ thumbhash: hash });
+```
+
+</td>
+<td>
+
+```typescript
+const { hash } = await blurhash(buffer, 4, 3);
+
+// Returns base83 string
+console.log(hash);
+// "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+```
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Advantages:**
+- Alpha channel support
+- Aspect ratio preserved
+- Better color accuracy
+- Smoother gradients
+
+</td>
+<td>
+
+**Advantages:**
+- Widely supported
+- Compact string format
+- Good for simple images
+
+</td>
+</tr>
+</table>
+
+<br />
 
 ## Supported Formats
 
-| Format | Read | Write | Notes |
-|--------|:----:|:-----:|-------|
-| JPEG | ✅ | ✅ | TurboJPEG with SIMD acceleration |
-| PNG | ✅ | ✅ | Adaptive compression |
-| WebP | ✅ | ✅ | Lossy & lossless modes |
-| HEIC/HEIF | ✅ | — | macOS ARM64 only |
-| AVIF | ✅ | — | Via libheif |
-| GIF | ✅ | ✅ | Full support |
-| BMP | ✅ | ✅ | Full support |
-| TIFF | ✅ | — | Read-only |
-| ICO | ✅ | — | Read-only |
+<table>
+<thead>
+<tr>
+<th>Format</th>
+<th align="center">Read</th>
+<th align="center">Write</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><strong>JPEG</strong></td><td align="center">✅</td><td align="center">✅</td><td>TurboJPEG with SIMD acceleration</td></tr>
+<tr><td><strong>PNG</strong></td><td align="center">✅</td><td align="center">✅</td><td>Adaptive compression</td></tr>
+<tr><td><strong>WebP</strong></td><td align="center">✅</td><td align="center">✅</td><td>Lossy & lossless modes</td></tr>
+<tr><td><strong>HEIC/HEIF</strong></td><td align="center">✅</td><td align="center">—</td><td>macOS ARM64 only</td></tr>
+<tr><td><strong>AVIF</strong></td><td align="center">✅</td><td align="center">—</td><td>Via libheif</td></tr>
+<tr><td><strong>GIF</strong></td><td align="center">✅</td><td align="center">✅</td><td>Full support</td></tr>
+<tr><td><strong>BMP</strong></td><td align="center">✅</td><td align="center">✅</td><td>Full support</td></tr>
+<tr><td><strong>TIFF</strong></td><td align="center">✅</td><td align="center">—</td><td>Read-only</td></tr>
+</tbody>
+</table>
 
----
+<br />
 
 ## Platform Support
 
-| Platform | Architecture | Status | HEIC |
-|----------|--------------|:------:|:----:|
-| macOS | ARM64 (M1/M2/M3/M4) | ✅ | ✅ |
-| macOS | x64 (Intel) | ✅ | — |
-| Linux | x64 (glibc) | ✅ | — |
-| Linux | x64 (musl/Alpine) | ✅ | — |
-| Linux | ARM64 | ✅ | — |
-| Windows | x64 | ✅ | — |
-| Windows | ARM64 | ✅ | — |
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Architecture</th>
+<th align="center">Status</th>
+<th align="center">HEIC</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>macOS</td><td>ARM64 (Apple Silicon)</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td>macOS</td><td>x64 (Intel)</td><td align="center">✅</td><td align="center">—</td></tr>
+<tr><td>Linux</td><td>x64 (glibc)</td><td align="center">✅</td><td align="center">—</td></tr>
+<tr><td>Linux</td><td>x64 (musl/Alpine)</td><td align="center">✅</td><td align="center">—</td></tr>
+<tr><td>Linux</td><td>ARM64</td><td align="center">✅</td><td align="center">—</td></tr>
+<tr><td>Windows</td><td>x64</td><td align="center">✅</td><td align="center">—</td></tr>
+<tr><td>Windows</td><td>ARM64</td><td align="center">✅</td><td align="center">—</td></tr>
+</tbody>
+</table>
 
-> **Note:** HEIC/HEIF decoding requires macOS ARM64 with libheif installed via Homebrew.
+<br />
 
----
+## Performance Benchmarks
 
-## Benchmarks
-
-Tested on Apple M1 Pro, Bun 1.3.3, compared to sharp v0.34.5:
-
-### Metadata Extraction
+<details open>
+<summary><strong>Metadata Extraction</strong></summary>
 
 | Format | bun-image-turbo | sharp | Speedup |
 |--------|----------------:|------:|:-------:|
@@ -171,7 +254,10 @@ Tested on Apple M1 Pro, Bun 1.3.3, compared to sharp v0.34.5:
 | JPEG | 0.003ms | 0.1ms | **38x** |
 | PNG | 0.002ms | 0.08ms | **40x** |
 
-### Image Processing
+</details>
+
+<details>
+<summary><strong>Image Processing</strong></summary>
 
 | Operation | bun-image-turbo | sharp | Speedup |
 |-----------|----------------:|------:|:-------:|
@@ -179,7 +265,10 @@ Tested on Apple M1 Pro, Bun 1.3.3, compared to sharp v0.34.5:
 | Transform Pipeline | 12.2ms | 19.1ms | **1.6x** |
 | 1MB JPEG → 800px | 12.6ms | 20.3ms | **1.6x** |
 
-### WebP Resize (v1.4.0+)
+</details>
+
+<details>
+<summary><strong>WebP Resize</strong></summary>
 
 | Source → Target | bun-image-turbo | sharp | Speedup |
 |-----------------|----------------:|------:|:-------:|
@@ -187,21 +276,23 @@ Tested on Apple M1 Pro, Bun 1.3.3, compared to sharp v0.34.5:
 | 1600x1200 → 200px | 6.4ms | 8.0ms | **1.24x** |
 | 4000x3000 → 400px | 32.4ms | 33.1ms | **1.02x** |
 
----
+</details>
+
+<br />
 
 ## Examples
 
-### Basic Usage
+<details>
+<summary><strong>Basic Usage</strong></summary>
 
 ```typescript
 import { metadata, resize, toWebp } from 'bun-image-turbo';
 
-const buffer = await Bun.file('input.jpg').arrayBuffer();
-const input = Buffer.from(buffer);
+const input = Buffer.from(await Bun.file('input.jpg').arrayBuffer());
 
 // Get image info
 const info = await metadata(input);
-console.log(info); // { width: 1920, height: 1080, format: 'Jpeg', ... }
+console.log(info); // { width: 1920, height: 1080, format: 'jpeg', ... }
 
 // Create thumbnail
 const thumb = await resize(input, { width: 200, height: 200, fit: 'Cover' });
@@ -211,7 +302,10 @@ const webp = await toWebp(input, { quality: 85 });
 await Bun.write('output.webp', webp);
 ```
 
-### HEIC Conversion (macOS ARM64)
+</details>
+
+<details>
+<summary><strong>HEIC Conversion (macOS ARM64)</strong></summary>
 
 ```typescript
 import { metadata, transform } from 'bun-image-turbo';
@@ -220,7 +314,7 @@ const heic = Buffer.from(await Bun.file('IMG_1234.HEIC').arrayBuffer());
 
 // Check format
 const info = await metadata(heic);
-console.log(info.format); // 'Heic'
+console.log(info.format); // 'heic'
 
 // Convert to JPEG
 const jpeg = await transform(heic, {
@@ -228,7 +322,10 @@ const jpeg = await transform(heic, {
 });
 ```
 
-### EXIF Metadata for AI Images
+</details>
+
+<details>
+<summary><strong>EXIF Metadata for AI Images</strong></summary>
 
 ```typescript
 import { writeExif, toWebp } from 'bun-image-turbo';
@@ -242,18 +339,19 @@ const withMetadata = await writeExif(webp, {
   copyright: '© 2024 Your Name',
   userComment: JSON.stringify({
     prompt: 'sunset over mountains, golden hour, 8k',
-    negativePrompt: 'blur, noise',
     seed: 12345,
-    steps: 30,
-    cfg_scale: 7.5
+    steps: 30
   })
 });
 ```
 
-### HTTP Image Server
+</details>
+
+<details>
+<summary><strong>HTTP Image Server</strong></summary>
 
 ```typescript
-import { resize, toWebp, metadata } from 'bun-image-turbo';
+import { resize, toWebp } from 'bun-image-turbo';
 
 Bun.serve({
   port: 3000,
@@ -280,7 +378,22 @@ Bun.serve({
 });
 ```
 
----
+</details>
+
+<br />
+
+## Technology Stack
+
+| Component | Technology | Benefit |
+|-----------|------------|---------|
+| JPEG Codec | TurboJPEG | SIMD acceleration (SSE2/AVX2/NEON) |
+| Resize Engine | fast_image_resize | Multi-threaded with Rayon |
+| WebP Codec | libwebp | Google's optimized encoder |
+| HEIC Decoder | libheif-rs | Native Apple format support |
+| Placeholders | thumbhash + blurhash | Compact image previews |
+| Node Bindings | napi-rs | Zero-copy buffer handling |
+
+<br />
 
 ## Development
 
@@ -304,51 +417,16 @@ bun run test:packages     # Package manager tests
 bun run test:all          # All tests
 ```
 
-### Requirements
-
-- **Runtime:** Bun 1.0+ or Node.js 18+
-- **Build:** Rust 1.70+ (only for building from source)
-
----
-
-## Documentation
-
-- **[Full Documentation](https://nexus-aissam.github.io/bun-image-turbo/)** — Complete guide with examples
-- **[API Reference](https://nexus-aissam.github.io/bun-image-turbo/api/)** — Detailed function documentation
-- **[Examples](https://nexus-aissam.github.io/bun-image-turbo/examples/)** — Code samples
-- **[Performance Guide](https://nexus-aissam.github.io/bun-image-turbo/guide/performance)** — Optimization tips
-- **[Architecture](https://nexus-aissam.github.io/bun-image-turbo/guide/architecture)** — Technical deep dive
-- **[Changelog](https://nexus-aissam.github.io/bun-image-turbo/changelog)** — Release notes
-
----
-
-## Technology Stack
-
-| Component | Technology | Benefit |
-|-----------|------------|---------|
-| JPEG Codec | TurboJPEG | SIMD acceleration (SSE2/AVX2/NEON) |
-| Resize Engine | fast_image_resize | Multi-threaded with Rayon |
-| WebP Codec | libwebp | Google's optimized encoder |
-| HEIC Decoder | libheif-rs | Native Apple format support |
-| Node Bindings | napi-rs | Zero-copy buffer handling |
-
----
+<br />
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+[MIT](LICENSE) © [Aissam Irhir](https://github.com/nexus-aissam)
 
----
+<br />
 
-## Author
+<div align="center">
 
-**Aissam Irhir** — [@nexus-aissam](https://github.com/nexus-aissam)
+**[Documentation](https://nexus-aissam.github.io/bun-image-turbo/)** · **[npm](https://www.npmjs.com/package/bun-image-turbo)** · **[GitHub](https://github.com/nexus-aissam/bun-image-turbo)** · **[Issues](https://github.com/nexus-aissam/bun-image-turbo/issues)**
 
----
-
-## Links
-
-- [npm Package](https://www.npmjs.com/package/bun-image-turbo)
-- [GitHub Repository](https://github.com/nexus-aissam/bun-image-turbo)
-- [Documentation](https://nexus-aissam.github.io/bun-image-turbo/)
-- [Issue Tracker](https://github.com/nexus-aissam/bun-image-turbo/issues)
+</div>

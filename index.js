@@ -310,7 +310,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { ImageFormat, ResizeFilter, FitMode, metadataSync, resizeSync, toJpegSync, toPngSync, toWebpSync, transformSync, blurhashSync, metadata, resize, toJpeg, toPng, toWebp, transform, blurhash, version, writeExifSync, writeExif, stripExifSync, stripExif } = nativeBinding
+const { ImageFormat, ResizeFilter, FitMode, metadataSync, resizeSync, toJpegSync, toPngSync, toWebpSync, transformSync, blurhashSync, thumbhashSync, thumbhashToRgbaSync, metadata, resize, toJpeg, toPng, toWebp, transform, blurhash, thumbhash, thumbhashToRgba, version, writeExifSync, writeExif, stripExifSync, stripExif } = nativeBinding
 
 module.exports.ImageFormat = ImageFormat
 module.exports.ResizeFilter = ResizeFilter
@@ -322,6 +322,8 @@ module.exports.toPngSync = toPngSync
 module.exports.toWebpSync = toWebpSync
 module.exports.transformSync = transformSync
 module.exports.blurhashSync = blurhashSync
+module.exports.thumbhashSync = thumbhashSync
+module.exports.thumbhashToRgbaSync = thumbhashToRgbaSync
 module.exports.metadata = metadata
 module.exports.resize = resize
 module.exports.toJpeg = toJpeg
@@ -329,6 +331,8 @@ module.exports.toPng = toPng
 module.exports.toWebp = toWebp
 module.exports.transform = transform
 module.exports.blurhash = blurhash
+module.exports.thumbhash = thumbhash
+module.exports.thumbhashToRgba = thumbhashToRgba
 module.exports.version = version
 module.exports.writeExifSync = writeExifSync
 module.exports.writeExif = writeExif

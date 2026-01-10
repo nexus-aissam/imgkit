@@ -2,6 +2,32 @@
 
 All notable changes to bun-image-turbo.
 
+## [1.5.0] - 2026-01-10
+
+### Added
+
+- **ThumbHash Support** - Generate smoother, more visually pleasing image placeholders
+  - `thumbhash()` / `thumbhashSync()` - Generate ThumbHash from any image
+  - `thumbhashToRgba()` / `thumbhashToRgbaSync()` - Decode ThumbHash to RGBA pixels
+  - `thumbhashToDataUrl()` - Convert ThumbHash to data URL for inline use
+  - Returns ready-to-use `dataUrl` for immediate display in HTML/CSS
+
+### ThumbHash vs BlurHash
+
+| Feature | ThumbHash | BlurHash |
+|---------|-----------|----------|
+| Alpha channel | ✅ Yes | ❌ No |
+| Aspect ratio preserved | ✅ Yes | ❌ No |
+| Color accuracy | Better | Good |
+| Hash size | ~25 bytes | ~28 chars |
+
+### Test Results
+
+- **56 tests pass** (including 12 new ThumbHash tests)
+- All async and sync functions verified
+
+---
+
 ## [1.4.6] - 2026-01-09
 
 ### Added

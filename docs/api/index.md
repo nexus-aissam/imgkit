@@ -12,7 +12,8 @@ Complete API documentation for bun-image-turbo.
 | [`toPng()`](/api/to-png) | Convert to PNG |
 | [`toWebp()`](/api/to-webp) | Convert to WebP (lossy or lossless) |
 | [`transform()`](/api/transform) | Apply multiple transformations in one pass |
-| [`blurhash()`](/api/blurhash) | Generate blurhash placeholder string |
+| [`blurhash()`](/api/blurhash) | Generate BlurHash placeholder string |
+| [`thumbhash()`](/api/thumbhash) | Generate ThumbHash placeholder (better quality) |
 | [`writeExif()`](/api/exif) | Write EXIF metadata to JPEG/WebP |
 | [`stripExif()`](/api/exif#stripexif) | Remove EXIF metadata from images |
 | `version()` | Get library version |
@@ -30,6 +31,7 @@ All functions have sync variants:
 | `toWebp()` | `toWebpSync()` |
 | `transform()` | `transformSync()` |
 | `blurhash()` | `blurhashSync()` |
+| `thumbhash()` | `thumbhashSync()` |
 | `writeExif()` | `writeExifSync()` |
 | `stripExif()` | `stripExifSync()` |
 
@@ -44,11 +46,12 @@ import {
   toWebp,
   transform,
   blurhash,
+  thumbhash,
   version
 } from 'bun-image-turbo';
 
 // Check version
-console.log(version()); // "1.4.6"
+console.log(version()); // "1.5.0"
 
 // Get metadata (returns many fields - see metadata docs)
 const info = await metadata(buffer);
@@ -73,6 +76,10 @@ const result = await transform(buffer, {
 
 // Generate blurhash
 const { hash } = await blurhash(buffer, 4, 3);
+
+// Generate thumbhash (better quality, alpha support)
+const { dataUrl } = await thumbhash(buffer);
+// Use directly: <img src={dataUrl} />
 ```
 
 ::: warning Case Sensitivity

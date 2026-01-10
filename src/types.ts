@@ -129,6 +129,30 @@ export interface BlurHashResult {
   height: number;
 }
 
+/** ThumbHash result */
+export interface ThumbHashResult {
+  /** The thumbhash bytes (typically ~25 bytes) */
+  hash: Buffer;
+  /** Base64 data URL for inline CSS/HTML usage */
+  dataUrl: string;
+  /** Original width */
+  width: number;
+  /** Original height */
+  height: number;
+  /** Whether image has alpha channel */
+  hasAlpha: boolean;
+}
+
+/** Decoded thumbhash result (RGBA pixels) */
+export interface ThumbHashDecodeResult {
+  /** RGBA pixel data */
+  rgba: Buffer;
+  /** Decoded width */
+  width: number;
+  /** Decoded height */
+  height: number;
+}
+
 /** EXIF metadata options for writing */
 export interface ExifOptions {
   /** Image description / caption / AI prompt */

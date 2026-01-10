@@ -158,6 +158,30 @@ pub struct BlurHashResult {
   pub height: u32,
 }
 
+/// Raw hash result for thumbhash
+#[napi(object)]
+pub struct ThumbHashResult {
+  /// The thumbhash bytes (typically 25 bytes)
+  pub hash: Vec<u8>,
+  /// Original width
+  pub width: u32,
+  /// Original height
+  pub height: u32,
+  /// Whether image has alpha channel
+  pub has_alpha: bool,
+}
+
+/// Decoded thumbhash result (RGBA pixels)
+#[napi(object)]
+pub struct ThumbHashDecodeResult {
+  /// RGBA pixel data
+  pub rgba: Vec<u8>,
+  /// Decoded width
+  pub width: u32,
+  /// Decoded height
+  pub height: u32,
+}
+
 /// Transform options (all-in-one processing)
 #[napi(object)]
 #[derive(Clone)]

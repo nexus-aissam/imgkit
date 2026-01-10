@@ -30,6 +30,7 @@ bun run batch    # Batch processing
 | [api-endpoint.ts](/examples/api-endpoint) | HTTP image processing server |
 | [batch-processing.ts](/examples/batch-processing) | Parallel batch processing |
 | [exif-metadata.ts](/examples/exif-metadata) | EXIF metadata writing for AI images |
+| [thumbhash.ts](/examples/thumbhash) | ThumbHash placeholder generation |
 
 ## Quick Examples
 
@@ -80,7 +81,7 @@ const result = await transform(buffer, {
 await Bun.write('output.webp', result);
 ```
 
-### Generate Blurhash
+### Generate BlurHash
 
 ```typescript
 import { blurhash } from 'bun-image-turbo';
@@ -89,6 +90,21 @@ const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
 const { hash, width, height } = await blurhash(buffer, 4, 3);
 console.log(`Hash: ${hash}`);
 console.log(`Original: ${width}x${height}`);
+```
+
+### Generate ThumbHash (Recommended)
+
+```typescript
+import { thumbhash } from 'bun-image-turbo';
+
+const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
+const { dataUrl, hash, hasAlpha } = await thumbhash(buffer);
+
+// Use directly in HTML - no decoding needed!
+const html = `<img src="${dataUrl}" alt="placeholder" />`;
+
+// Or store compact hash (~25 bytes) in database
+console.log(`Hash size: ${hash.length} bytes`);
 ```
 
 ### Add EXIF Metadata
@@ -135,5 +151,6 @@ await Bun.write('photo.jpg', jpeg);
 - [Basic Usage Example](/examples/basic-usage)
 - [HEIC Conversion Example](/examples/heic-conversion)
 - [EXIF Metadata Example](/examples/exif-metadata)
+- [ThumbHash Placeholders](/examples/thumbhash)
 - [API Endpoint Example](/examples/api-endpoint)
 - [Batch Processing Example](/examples/batch-processing)

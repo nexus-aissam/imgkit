@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-10
+
+### Added
+
+- **ThumbHash Support** - Generate smoother, more visually pleasing image placeholders
+  - `thumbhash()` / `thumbhashSync()` - Generate ThumbHash from any image
+  - `thumbhashToRgba()` / `thumbhashToRgbaSync()` - Decode ThumbHash to RGBA pixels
+  - `thumbhashToDataUrl()` - Convert ThumbHash to data URL for inline use
+  - Returns ready-to-use `dataUrl` for immediate display in HTML/CSS
+  - Automatic resizing to ThumbHash's required 100x100 max dimensions
+  - Preserves original image dimensions in result
+
+### Features vs BlurHash
+
+| Feature | ThumbHash | BlurHash |
+|---------|:---------:|:--------:|
+| Alpha channel | ✅ | ❌ |
+| Aspect ratio preserved | ✅ | ❌ |
+| Color accuracy | Better | Good |
+| Hash size | ~25 bytes | ~28 chars |
+| Output format | Binary | Base83 string |
+
+### Technical Details
+
+- Added `thumbhash` Rust crate v0.1.0
+- Images automatically resized to max 100x100 before encoding (ThumbHash requirement)
+- Fast Triangle (bilinear) filter used for thumbnail generation
+- Full async and sync API support
+
+### Test Results
+
+| Test Suite | Tests | Status |
+|------------|------:|:------:|
+| Local (Bun) | 56 pass | ✅ |
+| ThumbHash | 12 pass | ✅ |
+
+---
+
 ## [1.4.6] - 2026-01-09
 
 ### Added

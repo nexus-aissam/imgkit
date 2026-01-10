@@ -92,6 +92,57 @@ pub fn blurhash_sync(input: Buffer, components_x: Option<u32>, components_y: Opt
   })
 }
 
+/// Generate thumbhash from image synchronously
+/// ThumbHash produces smoother placeholders with alpha support and aspect ratio preservation
+/// Note: Images are automatically resized to max 100x100 as required by ThumbHash algorithm
+#[napi]
+pub fn thumbhash_sync(input: Buffer) -> Result<ThumbHashResult> {
+  let img = decode::decode_image(&input)?;
+  let (orig_w, orig_h) = image::GenericImageView::dimensions(&img);
+  let has_alpha = img.color().has_alpha();
+
+  // ThumbHash requires images to be max 100x100
+  // Resize while preserving aspect ratio
+  let (thumb_w, thumb_h) = if orig_w > 100 || orig_h > 100 {
+    let scale = 100.0 / (orig_w.max(orig_h) as f32);
+    (
+      ((orig_w as f32 * scale).round() as u32).max(1),
+      ((orig_h as f32 * scale).round() as u32).max(1),
+    )
+  } else {
+    (orig_w, orig_h)
+  };
+
+  let resized = image::imageops::resize(
+    &img.to_rgba8(),
+    thumb_w,
+    thumb_h,
+    image::imageops::FilterType::Triangle, // Fast bilinear filter
+  );
+
+  let hash = thumbhash::rgba_to_thumb_hash(thumb_w as usize, thumb_h as usize, resized.as_raw());
+
+  Ok(ThumbHashResult {
+    hash,
+    width: orig_w,
+    height: orig_h,
+    has_alpha,
+  })
+}
+
+/// Decode thumbhash back to RGBA pixels synchronously
+#[napi]
+pub fn thumbhash_to_rgba_sync(hash: Buffer) -> Result<ThumbHashDecodeResult> {
+  let (w, h, rgba) = thumbhash::thumb_hash_to_rgba(&hash)
+    .map_err(|_| Error::from_reason("Invalid thumbhash data"))?;
+
+  Ok(ThumbHashDecodeResult {
+    rgba,
+    width: w as u32,
+    height: h as u32,
+  })
+}
+
 // ============================================
 // ASYNC FUNCTIONS
 // ============================================
@@ -190,6 +241,67 @@ pub async fn blurhash(input: Buffer, components_x: Option<u32>, components_y: Op
       hash,
       width: w,
       height: h,
+    })
+  })
+  .await
+  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+  .map_err(|e| e.into())
+}
+
+/// Generate thumbhash from image asynchronously
+/// ThumbHash produces smoother placeholders with alpha support and aspect ratio preservation
+/// Note: Images are automatically resized to max 100x100 as required by ThumbHash algorithm
+#[napi]
+pub async fn thumbhash(input: Buffer) -> Result<ThumbHashResult> {
+  tokio::task::spawn_blocking(move || {
+    let img = decode::decode_image(&input)?;
+    let (orig_w, orig_h) = image::GenericImageView::dimensions(&img);
+    let has_alpha = img.color().has_alpha();
+
+    // ThumbHash requires images to be max 100x100
+    // Resize while preserving aspect ratio
+    let (thumb_w, thumb_h) = if orig_w > 100 || orig_h > 100 {
+      let scale = 100.0 / (orig_w.max(orig_h) as f32);
+      (
+        ((orig_w as f32 * scale).round() as u32).max(1),
+        ((orig_h as f32 * scale).round() as u32).max(1),
+      )
+    } else {
+      (orig_w, orig_h)
+    };
+
+    let resized = image::imageops::resize(
+      &img.to_rgba8(),
+      thumb_w,
+      thumb_h,
+      image::imageops::FilterType::Triangle, // Fast bilinear filter
+    );
+
+    let hash = thumbhash::rgba_to_thumb_hash(thumb_w as usize, thumb_h as usize, resized.as_raw());
+
+    Ok::<ThumbHashResult, ImageError>(ThumbHashResult {
+      hash,
+      width: orig_w,
+      height: orig_h,
+      has_alpha,
+    })
+  })
+  .await
+  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+  .map_err(|e| e.into())
+}
+
+/// Decode thumbhash back to RGBA pixels asynchronously
+#[napi]
+pub async fn thumbhash_to_rgba(hash: Buffer) -> Result<ThumbHashDecodeResult> {
+  tokio::task::spawn_blocking(move || {
+    let (w, h, rgba) = thumbhash::thumb_hash_to_rgba(&hash)
+      .map_err(|_| ImageError::ProcessingError("Invalid thumbhash data".to_string()))?;
+
+    Ok::<ThumbHashDecodeResult, ImageError>(ThumbHashDecodeResult {
+      rgba,
+      width: w as u32,
+      height: h as u32,
     })
   })
   .await

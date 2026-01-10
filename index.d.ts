@@ -132,6 +132,26 @@ export interface BlurHashResult {
   /** Original height */
   height: number
 }
+/** Raw hash result for thumbhash */
+export interface ThumbHashResult {
+  /** The thumbhash bytes (typically 25 bytes) */
+  hash: Array<number>
+  /** Original width */
+  width: number
+  /** Original height */
+  height: number
+  /** Whether image has alpha channel */
+  hasAlpha: boolean
+}
+/** Decoded thumbhash result (RGBA pixels) */
+export interface ThumbHashDecodeResult {
+  /** RGBA pixel data */
+  rgba: Array<number>
+  /** Decoded width */
+  width: number
+  /** Decoded height */
+  height: number
+}
 /** Transform options (all-in-one processing) */
 export interface TransformOptions {
   /** Resize options */
@@ -194,6 +214,14 @@ export declare function toWebpSync(input: Buffer, options?: WebPOptions | undefi
 export declare function transformSync(input: Buffer, options: TransformOptions): Buffer
 /** Generate blurhash from image synchronously */
 export declare function blurhashSync(input: Buffer, componentsX?: number | undefined | null, componentsY?: number | undefined | null): BlurHashResult
+/**
+ * Generate thumbhash from image synchronously
+ * ThumbHash produces smoother placeholders with alpha support and aspect ratio preservation
+ * Note: Images are automatically resized to max 100x100 as required by ThumbHash algorithm
+ */
+export declare function thumbhashSync(input: Buffer): ThumbHashResult
+/** Decode thumbhash back to RGBA pixels synchronously */
+export declare function thumbhashToRgbaSync(hash: Buffer): ThumbHashDecodeResult
 /** Get image metadata asynchronously */
 export declare function metadata(input: Buffer): Promise<ImageMetadata>
 /** Resize image asynchronously - uses scale-on-decode for JPEG optimization */
@@ -208,6 +236,14 @@ export declare function toWebp(input: Buffer, options?: WebPOptions | undefined 
 export declare function transform(input: Buffer, options: TransformOptions): Promise<Buffer>
 /** Generate blurhash from image asynchronously */
 export declare function blurhash(input: Buffer, componentsX?: number | undefined | null, componentsY?: number | undefined | null): Promise<BlurHashResult>
+/**
+ * Generate thumbhash from image asynchronously
+ * ThumbHash produces smoother placeholders with alpha support and aspect ratio preservation
+ * Note: Images are automatically resized to max 100x100 as required by ThumbHash algorithm
+ */
+export declare function thumbhash(input: Buffer): Promise<ThumbHashResult>
+/** Decode thumbhash back to RGBA pixels asynchronously */
+export declare function thumbhashToRgba(hash: Buffer): Promise<ThumbHashDecodeResult>
 /** Get library version */
 export declare function version(): string
 /** Write EXIF metadata to a WebP image synchronously */

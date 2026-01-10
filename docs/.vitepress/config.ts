@@ -62,7 +62,7 @@ export default defineConfig({
       { text: "API", link: "/api/", activeMatch: "/api/" },
       { text: "Examples", link: "/examples/", activeMatch: "/examples/" },
       {
-        text: "v1.4.6",
+        text: "v1.5.0",
         items: [
           { text: "Changelog", link: "/changelog" },
           {
@@ -127,6 +127,7 @@ export default defineConfig({
             { text: "toWebp", link: "/api/to-webp" },
             { text: "transform", link: "/api/transform" },
             { text: "blurhash", link: "/api/blurhash" },
+            { text: "thumbhash", link: "/api/thumbhash" },
             { text: "EXIF Metadata", link: "/api/exif" },
           ],
         },
@@ -145,6 +146,7 @@ export default defineConfig({
             { text: "Basic Usage", link: "/examples/basic-usage" },
             { text: "HEIC Conversion", link: "/examples/heic-conversion" },
             { text: "EXIF Metadata", link: "/examples/exif-metadata" },
+            { text: "ThumbHash Placeholders", link: "/examples/thumbhash" },
             { text: "API Endpoint", link: "/examples/api-endpoint" },
             { text: "Batch Processing", link: "/examples/batch-processing" },
           ],
