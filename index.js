@@ -310,13 +310,15 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { ImageFormat, ResizeFilter, FitMode, metadataSync, resizeSync, toJpegSync, toPngSync, toWebpSync, transformSync, blurhashSync, thumbhashSync, thumbhashToRgbaSync, metadata, resize, toJpeg, toPng, toWebp, transform, blurhash, thumbhash, thumbhashToRgba, version, writeExifSync, writeExif, stripExifSync, stripExif } = nativeBinding
+const { ImageFormat, ResizeFilter, FitMode, CropGravity, metadataSync, resizeSync, cropSync, toJpegSync, toPngSync, toWebpSync, transformSync, blurhashSync, thumbhashSync, thumbhashToRgbaSync, metadata, resize, crop, toJpeg, toPng, toWebp, transform, blurhash, thumbhash, thumbhashToRgba, version, writeExifSync, writeExif, stripExifSync, stripExif } = nativeBinding
 
 module.exports.ImageFormat = ImageFormat
 module.exports.ResizeFilter = ResizeFilter
 module.exports.FitMode = FitMode
+module.exports.CropGravity = CropGravity
 module.exports.metadataSync = metadataSync
 module.exports.resizeSync = resizeSync
+module.exports.cropSync = cropSync
 module.exports.toJpegSync = toJpegSync
 module.exports.toPngSync = toPngSync
 module.exports.toWebpSync = toWebpSync
@@ -326,6 +328,7 @@ module.exports.thumbhashSync = thumbhashSync
 module.exports.thumbhashToRgbaSync = thumbhashToRgbaSync
 module.exports.metadata = metadata
 module.exports.resize = resize
+module.exports.crop = crop
 module.exports.toJpeg = toJpeg
 module.exports.toPng = toPng
 module.exports.toWebp = toWebp

@@ -4,6 +4,8 @@ import {
   metadataSync,
   resize,
   resizeSync,
+  crop,
+  cropSync,
   toJpeg,
   toJpegSync,
   toPng,
@@ -76,6 +78,58 @@ describe("bun-image-turbo", () => {
       const meta = metadataSync(resized);
 
       expect(meta.width).toBe(200);
+    });
+  });
+
+  describe("crop", () => {
+    it("should crop image with explicit coordinates (async)", async () => {
+      const cropped = await crop(testImage, { x: 100, y: 50, width: 400, height: 300 });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(400);
+      expect(meta.height).toBe(300);
+    });
+
+    it("should crop image with explicit coordinates (sync)", () => {
+      const cropped = cropSync(testImage, { x: 0, y: 0, width: 200, height: 200 });
+      const meta = metadataSync(cropped);
+
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(200);
+    });
+
+    it("should crop to aspect ratio 1:1 (centered)", async () => {
+      const cropped = await crop(testImage, { aspectRatio: "1:1" });
+      const meta = await metadata(cropped);
+
+      // 800x600 -> 1:1 should be 600x600 (centered)
+      expect(meta.width).toBe(600);
+      expect(meta.height).toBe(600);
+    });
+
+    it("should crop to aspect ratio 16:9", async () => {
+      const cropped = await crop(testImage, { aspectRatio: "16:9" });
+      const meta = await metadata(cropped);
+
+      // 800x600 is already close to 16:9, so width stays, height adjusts
+      expect(meta.width).toBe(800);
+      expect(meta.height).toBe(450); // 800 / 16 * 9 = 450
+    });
+
+    it("should crop with gravity north", async () => {
+      const cropped = await crop(testImage, { width: 400, height: 300, gravity: "north" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(400);
+      expect(meta.height).toBe(300);
+    });
+
+    it("should crop with gravity southEast", async () => {
+      const cropped = await crop(testImage, { width: 200, height: 200, gravity: "southEast" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(200);
     });
   });
 
@@ -179,6 +233,32 @@ describe("bun-image-turbo", () => {
       const result = await transform(testImage, {
         resize: { width: 100, height: 100, fit: "fill" },
         output: { format: "webp" },
+      });
+
+      const meta = await metadata(result);
+      expect(meta.width).toBe(100);
+      expect(meta.height).toBe(100);
+    });
+
+    it("should crop then resize in pipeline", async () => {
+      // Crop to 1:1 aspect ratio first, then resize
+      const result = await transform(testImage, {
+        crop: { aspectRatio: "1:1" },
+        resize: { width: 200 },
+        output: { format: "webp" },
+      });
+
+      const meta = await metadata(result);
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(200); // 1:1 maintained after resize
+      expect(meta.format).toBe("webp");
+    });
+
+    it("should crop with gravity then resize", async () => {
+      const result = await transform(testImage, {
+        crop: { width: 400, height: 400, gravity: "center" },
+        resize: { width: 100 },
+        output: { format: "jpeg" },
       });
 
       const meta = await metadata(result);

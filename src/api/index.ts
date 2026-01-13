@@ -6,6 +6,7 @@
 
 export { metadata, metadataSync } from "./metadata";
 export { resize, resizeSync } from "./resize";
+export { crop, cropSync } from "./crop";
 export { toJpeg, toJpegSync, toPng, toPngSync, toWebp, toWebpSync } from "./encode";
 export { transform, transformSync } from "./transform";
 export { blurhash, blurhashSync } from "./blurhash";

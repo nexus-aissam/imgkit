@@ -62,7 +62,7 @@ export default defineConfig({
       { text: "API", link: "/api/", activeMatch: "/api/" },
       { text: "Examples", link: "/examples/", activeMatch: "/examples/" },
       {
-        text: "v1.5.0",
+        text: "v1.6.0",
         items: [
           { text: "Changelog", link: "/changelog" },
           {
@@ -122,6 +122,7 @@ export default defineConfig({
             { text: "Overview", link: "/api/" },
             { text: "metadata", link: "/api/metadata" },
             { text: "resize", link: "/api/resize" },
+            { text: "crop", link: "/api/crop" },
             { text: "toJpeg", link: "/api/to-jpeg" },
             { text: "toPng", link: "/api/to-png" },
             { text: "toWebp", link: "/api/to-webp" },
@@ -144,6 +145,7 @@ export default defineConfig({
           items: [
             { text: "Overview", link: "/examples/" },
             { text: "Basic Usage", link: "/examples/basic-usage" },
+            { text: "Cropping", link: "/examples/cropping" },
             { text: "HEIC Conversion", link: "/examples/heic-conversion" },
             { text: "EXIF Metadata", link: "/examples/exif-metadata" },
             { text: "ThumbHash Placeholders", link: "/examples/thumbhash" },

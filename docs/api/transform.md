@@ -20,6 +20,9 @@ function transformSync(input: Buffer, options: TransformOptions): Buffer
 
 ```typescript
 interface TransformOptions {
+  /** Crop configuration (applied first) */
+  crop?: CropOptions;
+
   /** Resize configuration */
   resize?: ResizeOptions;
 
@@ -49,6 +52,42 @@ interface TransformOptions {
 
   /** Contrast adjustment (-100 to 100) */
   contrast?: number;
+}
+```
+
+### CropOptions
+
+```typescript
+interface CropOptions {
+  /** X coordinate of crop origin */
+  x?: number;
+
+  /** Y coordinate of crop origin */
+  y?: number;
+
+  /** Width of crop region */
+  width?: number;
+
+  /** Height of crop region */
+  height?: number;
+
+  /** Aspect ratio (e.g., "16:9", "1:1") */
+  aspectRatio?: string;
+
+  /** Anchor point for cropping */
+  gravity?: CropGravity;
+}
+
+enum CropGravity {
+  Center = 'Center',
+  North = 'North',
+  South = 'South',
+  East = 'East',
+  West = 'West',
+  NorthWest = 'NorthWest',
+  NorthEast = 'NorthEast',
+  SouthWest = 'SouthWest',
+  SouthEast = 'SouthEast'
 }
 ```
 
@@ -392,19 +431,69 @@ const webp = await transform(heicBuffer, {
 });
 ```
 
+### Crop + Resize Pipeline
+
+The most powerful use case - crop to aspect ratio, then resize:
+
+```typescript
+// Square profile picture
+const profile = await transform(buffer, {
+  crop: { aspectRatio: "1:1" },
+  resize: { width: 256 },
+  output: { format: 'Jpeg', jpeg: { quality: 85 } }
+});
+
+// YouTube thumbnail
+const thumbnail = await transform(buffer, {
+  crop: { aspectRatio: "16:9", gravity: 'Center' },
+  resize: { width: 1280 },
+  sharpen: 5,
+  output: { format: 'WebP', webp: { quality: 80 } }
+});
+
+// Instagram story
+const story = await transform(buffer, {
+  crop: { aspectRatio: "9:16", gravity: 'Center' },
+  resize: { width: 1080 },
+  output: { format: 'Jpeg', jpeg: { quality: 90 } }
+});
+```
+
+### Crop with Coordinates
+
+```typescript
+// Extract specific region
+const cropped = await transform(buffer, {
+  crop: { x: 100, y: 50, width: 400, height: 300 },
+  output: { format: 'Png' }
+});
+
+// Crop from corner and resize
+const cornerCrop = await transform(buffer, {
+  crop: { width: 500, height: 500, gravity: 'NorthWest' },
+  resize: { width: 200 },
+  output: { format: 'WebP' }
+});
+```
+
 ## Transformation Order
 
 Operations are applied in this order:
 
-1. **Resize** - Scale the image
-2. **Rotate** - Rotate by 90/180/270 degrees
-3. **Flip** - Horizontal and/or vertical flip
-4. **Grayscale** - Convert to grayscale
-5. **Blur** - Apply Gaussian blur
-6. **Sharpen** - Apply unsharp mask
-7. **Brightness** - Adjust brightness
-8. **Contrast** - Adjust contrast
-9. **Encode** - Output to specified format
+1. **Crop** - Extract region (zero-copy, applied first)
+2. **Resize** - Scale the image
+3. **Rotate** - Rotate by 90/180/270 degrees
+4. **Flip** - Horizontal and/or vertical flip
+5. **Grayscale** - Convert to grayscale
+6. **Blur** - Apply Gaussian blur
+7. **Sharpen** - Apply unsharp mask
+8. **Brightness** - Adjust brightness
+9. **Contrast** - Adjust contrast
+10. **Encode** - Output to specified format
+
+::: tip Crop First for Performance
+Cropping is applied first because it reduces the number of pixels for all subsequent operations. This makes the entire pipeline faster.
+:::
 
 ## Option Ranges
 
@@ -431,6 +520,7 @@ Operations are applied in this order:
 
 ## See Also
 
+- [`crop()`](/api/crop) - Standalone crop function
 - [`resize()`](/api/resize) - Simple resize (PNG output only)
 - [`toJpeg()`](/api/to-jpeg) - Convert to JPEG
 - [`toWebp()`](/api/to-webp) - Convert to WebP

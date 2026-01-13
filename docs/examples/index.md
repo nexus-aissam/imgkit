@@ -26,6 +26,7 @@ bun run batch    # Batch processing
 | File | Description |
 |------|-------------|
 | [basic-usage.ts](/examples/basic-usage) | Core functionality demo |
+| [cropping.ts](/examples/cropping) | Cropping modes and social media presets |
 | [heic-conversion.ts](/examples/heic-conversion) | HEIC/HEIF conversion |
 | [api-endpoint.ts](/examples/api-endpoint) | HTTP image processing server |
 | [batch-processing.ts](/examples/batch-processing) | Parallel batch processing |
@@ -55,6 +56,23 @@ const resized = await resize(buffer, { width: 800 });
 await Bun.write('resized.png', resized);
 ```
 
+### Crop Image
+
+```typescript
+import { crop } from 'bun-image-turbo';
+
+const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
+
+// Crop to square (1:1) for profile pictures
+const square = await crop(buffer, { aspectRatio: "1:1" });
+
+// Crop to 16:9 for YouTube thumbnails
+const widescreen = await crop(buffer, { aspectRatio: "16:9" });
+
+// Crop specific region
+const region = await crop(buffer, { x: 100, y: 50, width: 400, height: 300 });
+```
+
 ### Convert to WebP
 
 ```typescript
@@ -71,12 +89,13 @@ await Bun.write('photo.webp', webp);
 import { transform } from 'bun-image-turbo';
 
 const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
+
+// Full pipeline: crop → resize → effects → output
 const result = await transform(buffer, {
-  resize: { width: 800, height: 600, fit: 'cover' },
-  rotate: 90,
-  grayscale: true,
-  sharpen: 10,
-  output: { format: 'webp', webp: { quality: 85 } }
+  crop: { aspectRatio: "16:9" },  // Crop first (zero-copy)
+  resize: { width: 1280 },
+  sharpen: 5,
+  output: { format: 'WebP', webp: { quality: 85 } }
 });
 await Bun.write('output.webp', result);
 ```
@@ -145,10 +164,14 @@ await Bun.write('photo.jpg', jpeg);
 - **CLI Tool**: Batch convert/resize images
 - **API Service**: Image processing microservice
 - **Desktop App**: Process local images with Tauri/Electron
+- **Social Media**: Auto-generate images for multiple platforms
+- **E-commerce**: Product thumbnails and zoom images
+- **AI/ML**: Training data preparation and augmentation
 
 ## Next Steps
 
 - [Basic Usage Example](/examples/basic-usage)
+- [Cropping Examples](/examples/cropping) - Social media presets, AI training data
 - [HEIC Conversion Example](/examples/heic-conversion)
 - [EXIF Metadata Example](/examples/exif-metadata)
 - [ThumbHash Placeholders](/examples/thumbhash)

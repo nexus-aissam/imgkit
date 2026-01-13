@@ -8,6 +8,7 @@ Complete API documentation for bun-image-turbo.
 |----------|-------------|
 | [`metadata()`](/api/metadata) | Get image metadata (header-only, ultra-fast) |
 | [`resize()`](/api/resize) | Resize image (outputs PNG) |
+| [`crop()`](/api/crop) | Crop image region (zero-copy, ultra-fast) |
 | [`toJpeg()`](/api/to-jpeg) | Convert to JPEG (TurboJPEG with SIMD) |
 | [`toPng()`](/api/to-png) | Convert to PNG |
 | [`toWebp()`](/api/to-webp) | Convert to WebP (lossy or lossless) |
@@ -26,6 +27,7 @@ All functions have sync variants:
 |-------|------|
 | `metadata()` | `metadataSync()` |
 | `resize()` | `resizeSync()` |
+| `crop()` | `cropSync()` |
 | `toJpeg()` | `toJpegSync()` |
 | `toPng()` | `toPngSync()` |
 | `toWebp()` | `toWebpSync()` |
@@ -41,6 +43,7 @@ All functions have sync variants:
 import {
   metadata,
   resize,
+  crop,
   toJpeg,
   toPng,
   toWebp,
@@ -51,7 +54,7 @@ import {
 } from 'bun-image-turbo';
 
 // Check version
-console.log(version()); // "1.5.0"
+console.log(version()); // "1.6.0"
 
 // Get metadata (returns many fields - see metadata docs)
 const info = await metadata(buffer);
@@ -60,17 +63,20 @@ const info = await metadata(buffer);
 // Resize (outputs PNG)
 const resized = await resize(buffer, { width: 800 });
 
+// Crop (multiple modes)
+const squared = await crop(buffer, { aspectRatio: "1:1" });
+const region = await crop(buffer, { x: 100, y: 50, width: 400, height: 300 });
+
 // Convert formats
 const jpeg = await toJpeg(buffer, { quality: 85 });
 const png = await toPng(buffer, { compression: 6 });
 const webp = await toWebp(buffer, { quality: 80 });
 
-// Transform with multiple operations
-// Note: enum values are PascalCase ('WebP', 'Cover', 'Lanczos3')
+// Transform with crop + resize pipeline
 const result = await transform(buffer, {
-  resize: { width: 800, fit: 'Cover' },
-  rotate: 90,
-  grayscale: true,
+  crop: { aspectRatio: "16:9" },
+  resize: { width: 1280 },
+  sharpen: 5,
   output: { format: 'WebP', webp: { quality: 85 } }
 });
 

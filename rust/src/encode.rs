@@ -9,6 +9,7 @@ use crate::{JpegOptions, PngOptions, WebPOptions};
 
 /// Encode image to JPEG - optimized using turbojpeg (libjpeg-turbo with SIMD)
 /// 2-6x faster than pure Rust encoders thanks to SSE2/AVX2/NEON
+#[inline(always)]
 pub fn encode_jpeg(img: &DynamicImage, options: Option<&JpegOptions>) -> Result<Vec<u8>, ImageError> {
   let quality = options.and_then(|o| o.quality).unwrap_or(80) as i32;
   let quality = quality.clamp(1, 100);
@@ -34,6 +35,7 @@ pub fn encode_jpeg(img: &DynamicImage, options: Option<&JpegOptions>) -> Result<
 
 /// Encode image to PNG - optimized to avoid unnecessary clones
 /// Uses RGB when no alpha channel present (25% less data to process)
+#[inline(always)]
 pub fn encode_png(img: &DynamicImage, options: Option<&PngOptions>) -> Result<Vec<u8>, ImageError> {
   let compression = options.and_then(|o| o.compression).unwrap_or(6);
 
@@ -84,6 +86,7 @@ pub fn encode_png(img: &DynamicImage, options: Option<&PngOptions>) -> Result<Ve
 }
 
 /// Encode image to WebP - optimized to avoid unnecessary clones
+#[inline(always)]
 pub fn encode_webp(img: &DynamicImage, options: Option<&WebPOptions>) -> Result<Vec<u8>, ImageError> {
   let quality = options.and_then(|o| o.quality).unwrap_or(80) as f32;
   let lossless = options.and_then(|o| o.lossless).unwrap_or(false);

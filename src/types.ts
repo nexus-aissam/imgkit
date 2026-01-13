@@ -21,6 +21,34 @@ export type FitMode =
   | 'inside'  // Resize only if larger than target
   | 'outside'; // Resize only if smaller than target
 
+/** Crop gravity/anchor point */
+export type CropGravity =
+  | 'center'    // Center of image (default)
+  | 'north'     // Top center
+  | 'south'     // Bottom center
+  | 'east'      // Right center
+  | 'west'      // Left center
+  | 'northWest' // Top left corner
+  | 'northEast' // Top right corner
+  | 'southWest' // Bottom left corner
+  | 'southEast'; // Bottom right corner
+
+/** Crop options */
+export interface CropOptions {
+  /** X coordinate of crop origin (left edge) */
+  x?: number;
+  /** Y coordinate of crop origin (top edge) */
+  y?: number;
+  /** Width of crop region */
+  width?: number;
+  /** Height of crop region */
+  height?: number;
+  /** Aspect ratio string (e.g., "16:9", "1:1", "4:3") */
+  aspectRatio?: string;
+  /** Gravity/anchor point for aspect ratio or dimension-based cropping */
+  gravity?: CropGravity;
+}
+
 /** Resize options */
 export interface ResizeOptions {
   /** Target width (optional if height is provided) */
@@ -179,6 +207,8 @@ export interface ExifOptions {
 
 /** Transform options (all-in-one processing) */
 export interface TransformOptions {
+  /** Crop options (applied before resize) */
+  crop?: CropOptions;
   /** Resize options */
   resize?: ResizeOptions;
   /** Output options */
@@ -204,6 +234,15 @@ export interface TransformOptions {
 }
 
 /** Native module options (internal) */
+export interface NapiCropOptions {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  aspectRatio?: string;
+  gravity?: string;
+}
+
 export interface NapiResizeOptions {
   width?: number;
   height?: number;
@@ -234,6 +273,7 @@ export interface NapiExifOptions {
 }
 
 export interface NapiTransformOptions {
+  crop?: NapiCropOptions;
   resize?: NapiResizeOptions;
   output?: NapiOutputOptions;
   rotate?: number;

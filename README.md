@@ -30,7 +30,7 @@
 - **950x faster** metadata extraction
 - **2.6x faster** concurrent operations
 - **SIMD-accelerated** JPEG codec
-- **Zero-copy** buffer handling
+- **Zero-copy** cropping & buffer handling
 
 </td>
 <td width="50%">
@@ -78,9 +78,10 @@ npm install bun-image-turbo
 import {
   metadata,
   resize,
+  crop,
+  transform,
   toWebp,
-  thumbhash,
-  writeExif
+  thumbhash
 } from 'bun-image-turbo';
 
 // Load image
@@ -90,21 +91,23 @@ const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
 const info = await metadata(buffer);
 console.log(`${info.width}x${info.height} ${info.format}`);
 
+// Crop to aspect ratio (zero-copy, ultra-fast)
+const squared = await crop(buffer, { aspectRatio: "1:1" });
+
 // Resize with shrink-on-decode optimization
 const thumbnail = await resize(buffer, { width: 200 });
 
-// Convert to WebP (50-80% smaller than JPEG)
-const webp = await toWebp(buffer, { quality: 85 });
+// Full pipeline: crop → resize → output
+const youtube = await transform(buffer, {
+  crop: { aspectRatio: "16:9" },
+  resize: { width: 1280 },
+  sharpen: 5,
+  output: { format: 'WebP', webp: { quality: 85 } }
+});
 
 // Generate ThumbHash placeholder (better than BlurHash)
 const { dataUrl } = await thumbhash(buffer);
 // Use directly: <img src={dataUrl} />
-
-// Add EXIF metadata (perfect for AI images)
-const withExif = await writeExif(webp, {
-  artist: 'Stable Diffusion XL',
-  software: 'ComfyUI'
-});
 ```
 
 <br />
@@ -123,7 +126,8 @@ const withExif = await writeExif(webp, {
 <tbody>
 <tr><td><code>metadata()</code></td><td>Get image dimensions, format, color info</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>resize()</code></td><td>Resize image with multiple algorithms</td><td align="center">✅</td><td align="center">✅</td></tr>
-<tr><td><code>transform()</code></td><td>Multi-operation pipeline</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>crop()</code></td><td>Crop image region (zero-copy, ultra-fast)</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>transform()</code></td><td>Multi-operation pipeline with crop support</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>toJpeg()</code></td><td>Convert to JPEG</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>toPng()</code></td><td>Convert to PNG</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>toWebp()</code></td><td>Convert to WebP</td><td align="center">✅</td><td align="center">✅</td></tr>

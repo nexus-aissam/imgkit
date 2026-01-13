@@ -45,8 +45,13 @@ features:
     details: For large scale reductions, uses progressive halving with Box filter before final pass. Matches libvips/sharp performance patterns.
     link: /guide/resizing
     linkText: Learn more
+  - icon: ✂️
+    title: Zero-Copy Cropping
+    details: Ultra-fast image cropping with aspect ratio and gravity support. Crop first, then resize - the pipeline is optimized for maximum performance.
+    link: /api/crop
+    linkText: Learn more
   - icon: 🔷
-    title: Blurhash Generation
+    title: Blurhash & ThumbHash
     details: Built-in compact placeholder generation. Create tiny hash strings that decode to blurred preview images for progressive loading.
     link: /api/blurhash
     linkText: Learn more
@@ -81,7 +86,7 @@ Tested on Apple M1 Pro with Bun 1.3.3:
 | **1MB JPEG → 800px** | 12.6ms | 20.3ms | **1.6x** |
 | **Thumbnail (200px)** | 8.8ms | 10.7ms | **1.2x** |
 
-### WebP Resize (NEW in v1.4.0)
+### WebP Resize
 
 | Source Size | Target | bun-image-turbo | sharp | Speedup |
 |-------------|--------|---------------:|------:|:-------:|
@@ -113,7 +118,7 @@ bun add bun-image-turbo
 ```
 
 ```typescript
-import { metadata, resize, transform, blurhash } from 'bun-image-turbo';
+import { metadata, resize, crop, transform, thumbhash } from 'bun-image-turbo';
 
 // Read image
 const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
@@ -122,19 +127,23 @@ const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
 const info = await metadata(buffer);
 console.log(`${info.width}x${info.height} ${info.format}`);
 
+// Crop to aspect ratio (zero-copy, ultra-fast)
+const squared = await crop(buffer, { aspectRatio: "1:1" });
+
 // Resize with shrink-on-decode optimization
 const thumbnail = await resize(buffer, { width: 200 });
 
-// Full transform pipeline
+// Full transform pipeline with crop + resize
 const result = await transform(buffer, {
-  resize: { width: 800, height: 600, fit: 'cover' },
-  rotate: 90,
-  sharpen: 10,
-  output: { format: 'webp', webp: { quality: 85 } }
+  crop: { aspectRatio: "16:9" },
+  resize: { width: 1280 },
+  sharpen: 5,
+  output: { format: 'WebP', webp: { quality: 85 } }
 });
 
-// Generate blurhash placeholder
-const { hash } = await blurhash(buffer, 4, 3);
+// Generate thumbhash placeholder (better than blurhash)
+const { dataUrl } = await thumbhash(buffer);
+// Use directly: <img src={dataUrl} />
 ```
 
 ## Supported Formats

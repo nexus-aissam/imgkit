@@ -41,6 +41,45 @@ export const enum FitMode {
   /** Resize only if smaller than target */
   Outside = 'Outside'
 }
+/** Crop gravity/anchor point */
+export const enum CropGravity {
+  /** Center of image (default) */
+  Center = 'Center',
+  /** Top center */
+  North = 'North',
+  /** Bottom center */
+  South = 'South',
+  /** Right center */
+  East = 'East',
+  /** Left center */
+  West = 'West',
+  /** Top left corner */
+  NorthWest = 'NorthWest',
+  /** Top right corner */
+  NorthEast = 'NorthEast',
+  /** Bottom left corner */
+  SouthWest = 'SouthWest',
+  /** Bottom right corner */
+  SouthEast = 'SouthEast'
+}
+/** Crop options */
+export interface CropOptions {
+  /** X coordinate of crop origin (left edge) */
+  x?: number
+  /** Y coordinate of crop origin (top edge) */
+  y?: number
+  /** Width of crop region */
+  width?: number
+  /** Height of crop region */
+  height?: number
+  /**
+   * Aspect ratio string (e.g., "16:9", "1:1", "4:3")
+   * When set, crops to this ratio using gravity as anchor
+   */
+  aspectRatio?: string
+  /** Gravity/anchor point for aspect ratio or dimension-based cropping */
+  gravity?: CropGravity
+}
 /** Resize options */
 export interface ResizeOptions {
   /** Target width (optional if height is provided) */
@@ -154,6 +193,8 @@ export interface ThumbHashDecodeResult {
 }
 /** Transform options (all-in-one processing) */
 export interface TransformOptions {
+  /** Crop options (applied before resize) */
+  crop?: CropOptions
   /** Resize options */
   resize?: ResizeOptions
   /** Output options */
@@ -204,6 +245,8 @@ export interface ExifOptions {
 export declare function metadataSync(input: Buffer): ImageMetadata
 /** Resize image synchronously - uses scale-on-decode for JPEG optimization */
 export declare function resizeSync(input: Buffer, options: ResizeOptions): Buffer
+/** Crop image synchronously - zero-copy operation */
+export declare function cropSync(input: Buffer, options: CropOptions): Buffer
 /** Convert image to JPEG synchronously */
 export declare function toJpegSync(input: Buffer, options?: JpegOptions | undefined | null): Buffer
 /** Convert image to PNG synchronously */
@@ -218,6 +261,7 @@ export declare function blurhashSync(input: Buffer, componentsX?: number | undef
  * Generate thumbhash from image synchronously
  * ThumbHash produces smoother placeholders with alpha support and aspect ratio preservation
  * Note: Images are automatically resized to max 100x100 as required by ThumbHash algorithm
+ * OPTIMIZED: Uses shrink-on-load to decode directly at reduced resolution (3x faster)
  */
 export declare function thumbhashSync(input: Buffer): ThumbHashResult
 /** Decode thumbhash back to RGBA pixels synchronously */
@@ -226,6 +270,8 @@ export declare function thumbhashToRgbaSync(hash: Buffer): ThumbHashDecodeResult
 export declare function metadata(input: Buffer): Promise<ImageMetadata>
 /** Resize image asynchronously - uses scale-on-decode for JPEG optimization */
 export declare function resize(input: Buffer, options: ResizeOptions): Promise<Buffer>
+/** Crop image asynchronously - zero-copy operation */
+export declare function crop(input: Buffer, options: CropOptions): Promise<Buffer>
 /** Convert image to JPEG asynchronously */
 export declare function toJpeg(input: Buffer, options?: JpegOptions | undefined | null): Promise<Buffer>
 /** Convert image to PNG asynchronously */
@@ -240,6 +286,7 @@ export declare function blurhash(input: Buffer, componentsX?: number | undefined
  * Generate thumbhash from image asynchronously
  * ThumbHash produces smoother placeholders with alpha support and aspect ratio preservation
  * Note: Images are automatically resized to max 100x100 as required by ThumbHash algorithm
+ * OPTIMIZED: Uses shrink-on-load to decode directly at reduced resolution (3x faster)
  */
 export declare function thumbhash(input: Buffer): Promise<ThumbHashResult>
 /** Decode thumbhash back to RGBA pixels asynchronously */

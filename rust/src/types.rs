@@ -48,6 +48,48 @@ pub enum FitMode {
   Outside,
 }
 
+/// Crop gravity/anchor point
+#[napi(string_enum)]
+pub enum CropGravity {
+  /// Center of image (default)
+  Center,
+  /// Top center
+  North,
+  /// Bottom center
+  South,
+  /// Right center
+  East,
+  /// Left center
+  West,
+  /// Top left corner
+  NorthWest,
+  /// Top right corner
+  NorthEast,
+  /// Bottom left corner
+  SouthWest,
+  /// Bottom right corner
+  SouthEast,
+}
+
+/// Crop options
+#[napi(object)]
+#[derive(Clone)]
+pub struct CropOptions {
+  /// X coordinate of crop origin (left edge)
+  pub x: Option<u32>,
+  /// Y coordinate of crop origin (top edge)
+  pub y: Option<u32>,
+  /// Width of crop region
+  pub width: Option<u32>,
+  /// Height of crop region
+  pub height: Option<u32>,
+  /// Aspect ratio string (e.g., "16:9", "1:1", "4:3")
+  /// When set, crops to this ratio using gravity as anchor
+  pub aspect_ratio: Option<String>,
+  /// Gravity/anchor point for aspect ratio or dimension-based cropping
+  pub gravity: Option<CropGravity>,
+}
+
 /// Resize options
 #[napi(object)]
 #[derive(Clone)]
@@ -186,6 +228,8 @@ pub struct ThumbHashDecodeResult {
 #[napi(object)]
 #[derive(Clone)]
 pub struct TransformOptions {
+  /// Crop options (applied before resize)
+  pub crop: Option<CropOptions>,
   /// Resize options
   pub resize: Option<ResizeOptions>,
   /// Output options

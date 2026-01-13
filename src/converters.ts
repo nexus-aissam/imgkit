@@ -5,8 +5,10 @@
  */
 
 import type {
+  CropOptions,
   ResizeOptions,
   TransformOptions,
+  NapiCropOptions,
   NapiResizeOptions,
   NapiTransformOptions,
 } from "./types";
@@ -26,6 +28,29 @@ export function toNapiFilter(filter?: string): string | undefined {
 export function toNapiFit(fit?: string): string | undefined {
   if (!fit) return undefined;
   return fit.charAt(0).toUpperCase() + fit.slice(1);
+}
+
+/**
+ * Convert crop gravity to napi format
+ */
+export function toNapiGravity(gravity?: string): string | undefined {
+  if (!gravity) return undefined;
+  // Convert camelCase to PascalCase for Rust enum
+  return gravity.charAt(0).toUpperCase() + gravity.slice(1);
+}
+
+/**
+ * Convert crop options to napi format
+ */
+export function toNapiCropOptions(options: CropOptions): NapiCropOptions {
+  return {
+    x: options.x,
+    y: options.y,
+    width: options.width,
+    height: options.height,
+    aspectRatio: options.aspectRatio,
+    gravity: toNapiGravity(options.gravity),
+  };
 }
 
 /**
@@ -66,6 +91,10 @@ export function toNapiTransformOptions(
   options: TransformOptions
 ): NapiTransformOptions {
   const result: NapiTransformOptions = {};
+
+  if (options.crop) {
+    result.crop = toNapiCropOptions(options.crop);
+  }
 
   if (options.resize) {
     result.resize = toNapiResizeOptions(options.resize);

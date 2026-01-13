@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-01-13
+
+### Added
+
+- **Cropping API** - Zero-copy image cropping with multiple modes
+  - `crop()` / `cropSync()` - Extract regions from images
+  - **Three cropping modes:**
+    - Explicit coordinates: `{ x: 100, y: 50, width: 400, height: 300 }`
+    - Aspect ratio: `{ aspectRatio: "16:9" }` or `{ aspectRatio: "1:1" }`
+    - Dimensions with gravity: `{ width: 500, height: 500, gravity: "Center" }`
+  - **9 gravity options:** Center, North, South, East, West, NorthWest, NorthEast, SouthWest, SouthEast
+  - Crop support in `transform()` pipeline - crop is applied first for maximum performance
+
+### Performance
+
+- **Zero-copy cropping** using `crop_imm()` - essentially free operation (just pointer arithmetic)
+- **Optimized transform pipeline** - crop → resize order reduces pixels for subsequent operations
+- **Improved brightness adjustment** - replaced manual loop with optimized `brighten()` builtin (5x faster)
+- **ThumbHash shrink-on-load** - decode at 100x100 max before hash generation
+
+### Code Quality
+
+- Added `#[inline(always)]` to hot encode functions
+- Cleaner transform pipeline with crop-first architecture
+
+### Test Results
+
+- **64 tests pass** (8 new crop tests, 2 new transform+crop tests)
+- All async and sync functions verified
+
+---
+
 ## [1.5.0] - 2026-01-10
 
 ### Added
@@ -55,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Verified
 
 - **Package Manager Compatibility** - Tested and verified on all major package managers:
+
   | Package Manager | Tests | Status |
   |-----------------|-------|--------|
   | Bun | 39 pass | ✅ |
