@@ -42,7 +42,13 @@ export type {
   ThumbHashDecodeResult,
   TransformOptions,
   ExifOptions,
+  TensorDtype,
+  TensorLayout,
+  TensorNormalization,
+  TensorOptions,
+  TensorResult,
 } from "./types";
+export type { EnhancedTensorResult } from "./api";
 
 // Re-export API functions
 export {
@@ -71,6 +77,8 @@ export {
   writeExifSync,
   stripExif,
   stripExifSync,
+  toTensor,
+  toTensorSync,
 } from "./api";
 
 // Import for version and default export
@@ -110,6 +118,8 @@ import {
   writeExifSync,
   stripExif,
   stripExifSync,
+  toTensor,
+  toTensorSync,
 } from "./api";
 
 // Default export for convenience
@@ -139,5 +149,7 @@ export default {
   writeExifSync,
   stripExif,
   stripExifSync,
+  toTensor,
+  toTensorSync,
   version,
 };

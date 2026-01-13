@@ -5,6 +5,8 @@ import {
   metadataSync,
   resize,
   resizeSync,
+  crop,
+  cropSync,
   toJpeg,
   toJpegSync,
   toPng,
@@ -92,6 +94,64 @@ describe("bun-image-turbo - Node.js Test Suite", () => {
       const resized = resizeSync(jpegImage, { width: 100 });
       const meta = metadataSync(resized);
       assert.strictEqual(meta.width, 100);
+    });
+  });
+
+  describe("crop()", () => {
+    it("should crop with explicit coordinates (async)", async () => {
+      const cropped = await crop(jpegImage, { x: 100, y: 50, width: 400, height: 300 });
+      const meta = await metadata(cropped);
+      assert.strictEqual(meta.width, 400);
+      assert.strictEqual(meta.height, 300);
+    });
+
+    it("should crop with explicit coordinates (sync)", () => {
+      const cropped = cropSync(jpegImage, { x: 0, y: 0, width: 200, height: 200 });
+      const meta = metadataSync(cropped);
+      assert.strictEqual(meta.width, 200);
+      assert.strictEqual(meta.height, 200);
+    });
+
+    it("should crop to aspect ratio 1:1", async () => {
+      const cropped = await crop(jpegImage, { aspectRatio: "1:1" });
+      const meta = await metadata(cropped);
+      assert.strictEqual(meta.width, 600);
+      assert.strictEqual(meta.height, 600);
+    });
+
+    it("should crop to aspect ratio 16:9", async () => {
+      const cropped = await crop(jpegImage, { aspectRatio: "16:9" });
+      const meta = await metadata(cropped);
+      assert.strictEqual(meta.width, 800);
+      assert.strictEqual(meta.height, 450);
+    });
+
+    it("should crop with gravity north", async () => {
+      const cropped = await crop(jpegImage, { width: 400, height: 300, gravity: "north" });
+      const meta = await metadata(cropped);
+      assert.strictEqual(meta.width, 400);
+      assert.strictEqual(meta.height, 300);
+    });
+
+    it("should crop with gravity center", async () => {
+      const cropped = await crop(jpegImage, { width: 300, height: 300, gravity: "center" });
+      const meta = await metadata(cropped);
+      assert.strictEqual(meta.width, 300);
+      assert.strictEqual(meta.height, 300);
+    });
+
+    it("should crop with gravity southEast", async () => {
+      const cropped = await crop(jpegImage, { width: 200, height: 200, gravity: "southEast" });
+      const meta = await metadata(cropped);
+      assert.strictEqual(meta.width, 200);
+      assert.strictEqual(meta.height, 200);
+    });
+
+    it("should crop to aspect ratio with gravity", async () => {
+      const cropped = await crop(jpegImage, { aspectRatio: "1:1", gravity: "north" });
+      const meta = await metadata(cropped);
+      assert.strictEqual(meta.width, 600);
+      assert.strictEqual(meta.height, 600);
     });
   });
 

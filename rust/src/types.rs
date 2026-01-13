@@ -254,6 +254,80 @@ pub struct TransformOptions {
   pub exif: Option<ExifOptions>,
 }
 
+// ============================================
+// TENSOR TYPES
+// ============================================
+
+/// Tensor data type
+#[napi(string_enum)]
+pub enum TensorDtype {
+  /// 32-bit floating point (default)
+  Float32,
+  /// 8-bit unsigned integer (raw pixels)
+  Uint8,
+}
+
+/// Tensor memory layout
+#[napi(string_enum)]
+pub enum TensorLayout {
+  /// Channel-Height-Width (PyTorch/ONNX default)
+  Chw,
+  /// Height-Width-Channel (TensorFlow default)
+  Hwc,
+}
+
+/// Normalization preset
+#[napi(string_enum)]
+pub enum TensorNormalization {
+  /// ImageNet normalization (mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
+  Imagenet,
+  /// CLIP normalization (mean=[0.481,0.458,0.408], std=[0.269,0.261,0.276])
+  Clip,
+  /// Scale to [0, 1] range (divide by 255)
+  ZeroOne,
+  /// Scale to [-1, 1] range
+  NegOneOne,
+  /// No normalization (raw 0-255 values)
+  None,
+}
+
+/// Options for tensor conversion
+#[napi(object)]
+#[derive(Clone)]
+pub struct TensorOptions {
+  /// Output data type (default: Float32)
+  pub dtype: Option<TensorDtype>,
+  /// Memory layout (default: CHW for PyTorch/ONNX)
+  pub layout: Option<TensorLayout>,
+  /// Normalization preset (default: None)
+  pub normalization: Option<TensorNormalization>,
+  /// Target width for resize before conversion
+  pub width: Option<u32>,
+  /// Target height for resize before conversion
+  pub height: Option<u32>,
+  /// Add batch dimension (default: false)
+  pub batch: Option<bool>,
+}
+
+/// Tensor conversion result
+#[napi(object)]
+pub struct TensorResult {
+  /// Raw tensor data (Float32Array or Uint8Array bytes)
+  pub data: Vec<u8>,
+  /// Shape array (e.g., [3, 224, 224] or [1, 3, 224, 224])
+  pub shape: Vec<u32>,
+  /// Data type used
+  pub dtype: TensorDtype,
+  /// Memory layout used
+  pub layout: TensorLayout,
+  /// Image width
+  pub width: u32,
+  /// Image height
+  pub height: u32,
+  /// Number of channels (always 3 for RGB)
+  pub channels: u32,
+}
+
 /// EXIF metadata options for writing
 #[napi(object)]
 #[derive(Clone)]

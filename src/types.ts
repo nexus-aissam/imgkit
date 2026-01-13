@@ -286,3 +286,65 @@ export interface NapiTransformOptions {
   contrast?: number;
   exif?: NapiExifOptions;
 }
+
+// ============================================
+// TENSOR TYPES
+// ============================================
+
+/** Tensor data type */
+export type TensorDtype = 'Float32' | 'Uint8';
+
+/** Tensor memory layout */
+export type TensorLayout = 'Chw' | 'Hwc';
+
+/** Normalization preset */
+export type TensorNormalization =
+  | 'Imagenet'   // mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]
+  | 'Clip'       // mean=[0.481,0.458,0.408], std=[0.269,0.261,0.276]
+  | 'ZeroOne'    // Scale to [0, 1] range
+  | 'NegOneOne'  // Scale to [-1, 1] range
+  | 'None';      // No normalization (raw 0-255)
+
+/** Tensor conversion options */
+export interface TensorOptions {
+  /** Output data type (default: Float32) */
+  dtype?: TensorDtype;
+  /** Memory layout: 'Chw' for PyTorch/ONNX, 'Hwc' for TensorFlow (default: Chw) */
+  layout?: TensorLayout;
+  /** Normalization preset (default: None) */
+  normalization?: TensorNormalization;
+  /** Target width for resize before conversion */
+  width?: number;
+  /** Target height for resize before conversion */
+  height?: number;
+  /** Add batch dimension (default: false) */
+  batch?: boolean;
+}
+
+/** Tensor conversion result */
+export interface TensorResult {
+  /** Raw tensor data as bytes (use toFloat32Array() or toUint8Array() to convert) */
+  data: Buffer;
+  /** Shape array (e.g., [3, 224, 224] or [1, 3, 224, 224] with batch) */
+  shape: number[];
+  /** Data type used */
+  dtype: TensorDtype;
+  /** Memory layout used */
+  layout: TensorLayout;
+  /** Image width */
+  width: number;
+  /** Image height */
+  height: number;
+  /** Number of channels (always 3 for RGB) */
+  channels: number;
+}
+
+/** Native tensor options (internal) */
+export interface NapiTensorOptions {
+  dtype?: string;
+  layout?: string;
+  normalization?: string;
+  width?: number;
+  height?: number;
+  batch?: boolean;
+}

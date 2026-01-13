@@ -62,7 +62,7 @@ export default defineConfig({
       { text: "API", link: "/api/", activeMatch: "/api/" },
       { text: "Examples", link: "/examples/", activeMatch: "/examples/" },
       {
-        text: "v1.6.0",
+        text: "v1.7.0",
         items: [
           { text: "Changelog", link: "/changelog" },
           {
@@ -107,6 +107,7 @@ export default defineConfig({
           text: "Advanced",
           collapsed: false,
           items: [
+            { text: "ML Tensor Conversion", link: "/guide/tensor" },
             { text: "Performance", link: "/guide/performance" },
             { text: "Architecture", link: "/guide/architecture" },
             { text: "Async vs Sync", link: "/guide/async-sync" },
@@ -129,6 +130,7 @@ export default defineConfig({
             { text: "transform", link: "/api/transform" },
             { text: "blurhash", link: "/api/blurhash" },
             { text: "thumbhash", link: "/api/thumbhash" },
+            { text: "toTensor", link: "/api/tensor" },
             { text: "EXIF Metadata", link: "/api/exif" },
           ],
         },
@@ -149,6 +151,7 @@ export default defineConfig({
             { text: "HEIC Conversion", link: "/examples/heic-conversion" },
             { text: "EXIF Metadata", link: "/examples/exif-metadata" },
             { text: "ThumbHash Placeholders", link: "/examples/thumbhash" },
+            { text: "ML Tensor Conversion", link: "/examples/tensor" },
             { text: "API Endpoint", link: "/examples/api-endpoint" },
             { text: "Batch Processing", link: "/examples/batch-processing" },
           ],

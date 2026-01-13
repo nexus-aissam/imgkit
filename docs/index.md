@@ -55,6 +55,11 @@ features:
     details: Built-in compact placeholder generation. Create tiny hash strings that decode to blurred preview images for progressive loading.
     link: /api/blurhash
     linkText: Learn more
+  - icon: 🧠
+    title: ML Tensor Conversion
+    details: First JavaScript package with native SIMD-accelerated image-to-tensor conversion. Built-in ImageNet, CLIP normalization for PyTorch, TensorFlow, ONNX.
+    link: /api/tensor
+    linkText: Learn more
 ---
 
 <div class="vp-doc" style="padding: 0 24px;">
@@ -118,7 +123,7 @@ bun add bun-image-turbo
 ```
 
 ```typescript
-import { metadata, resize, crop, transform, thumbhash } from 'bun-image-turbo';
+import { metadata, resize, crop, transform, thumbhash, toTensor } from 'bun-image-turbo';
 
 // Read image
 const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
@@ -144,6 +149,14 @@ const result = await transform(buffer, {
 // Generate thumbhash placeholder (better than blurhash)
 const { dataUrl } = await thumbhash(buffer);
 // Use directly: <img src={dataUrl} />
+
+// ML tensor conversion (first JS package with native SIMD!)
+const tensor = await toTensor(buffer, {
+  width: 224, height: 224,
+  normalization: 'Imagenet',
+  layout: 'Chw', batch: true
+});
+// Shape: [1, 3, 224, 224] - Ready for PyTorch/ONNX!
 ```
 
 ## Supported Formats

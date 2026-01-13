@@ -32,6 +32,7 @@ bun run batch    # Batch processing
 | [batch-processing.ts](/examples/batch-processing) | Parallel batch processing |
 | [exif-metadata.ts](/examples/exif-metadata) | EXIF metadata writing for AI images |
 | [thumbhash.ts](/examples/thumbhash) | ThumbHash placeholder generation |
+| [tensor.ts](/examples/tensor) | ML tensor conversion for PyTorch/TensorFlow |
 
 ## Quick Examples
 
@@ -157,6 +158,26 @@ const jpeg = await toJpeg(heic, { quality: 90 });
 await Bun.write('photo.jpg', jpeg);
 ```
 
+### Convert to ML Tensor
+
+```typescript
+import { toTensor } from 'bun-image-turbo';
+
+const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
+
+// PyTorch/ONNX (CHW layout, ImageNet normalization)
+const tensor = await toTensor(buffer, {
+  width: 224,
+  height: 224,
+  normalization: 'Imagenet',
+  layout: 'Chw',
+  batch: true
+});
+
+// Shape: [1, 3, 224, 224] - Ready for ML inference!
+const float32Data = tensor.toFloat32Array();
+```
+
 ## Use Cases
 
 - **Web Server**: Process images on-the-fly for user uploads
@@ -166,7 +187,7 @@ await Bun.write('photo.jpg', jpeg);
 - **Desktop App**: Process local images with Tauri/Electron
 - **Social Media**: Auto-generate images for multiple platforms
 - **E-commerce**: Product thumbnails and zoom images
-- **AI/ML**: Training data preparation and augmentation
+- **AI/ML**: Training data preparation, tensor conversion, model inference
 
 ## Next Steps
 
@@ -175,5 +196,6 @@ await Bun.write('photo.jpg', jpeg);
 - [HEIC Conversion Example](/examples/heic-conversion)
 - [EXIF Metadata Example](/examples/exif-metadata)
 - [ThumbHash Placeholders](/examples/thumbhash)
+- [ML Tensor Conversion](/examples/tensor) - PyTorch, TensorFlow, ONNX
 - [API Endpoint Example](/examples/api-endpoint)
 - [Batch Processing Example](/examples/batch-processing)

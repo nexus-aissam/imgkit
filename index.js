@@ -310,12 +310,15 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { ImageFormat, ResizeFilter, FitMode, CropGravity, metadataSync, resizeSync, cropSync, toJpegSync, toPngSync, toWebpSync, transformSync, blurhashSync, thumbhashSync, thumbhashToRgbaSync, metadata, resize, crop, toJpeg, toPng, toWebp, transform, blurhash, thumbhash, thumbhashToRgba, version, writeExifSync, writeExif, stripExifSync, stripExif } = nativeBinding
+const { ImageFormat, ResizeFilter, FitMode, CropGravity, TensorDtype, TensorLayout, TensorNormalization, metadataSync, resizeSync, cropSync, toJpegSync, toPngSync, toWebpSync, transformSync, blurhashSync, thumbhashSync, thumbhashToRgbaSync, metadata, resize, crop, toJpeg, toPng, toWebp, transform, blurhash, thumbhash, thumbhashToRgba, version, toTensorSync, toTensor, writeExifSync, writeExif, stripExifSync, stripExif } = nativeBinding
 
 module.exports.ImageFormat = ImageFormat
 module.exports.ResizeFilter = ResizeFilter
 module.exports.FitMode = FitMode
 module.exports.CropGravity = CropGravity
+module.exports.TensorDtype = TensorDtype
+module.exports.TensorLayout = TensorLayout
+module.exports.TensorNormalization = TensorNormalization
 module.exports.metadataSync = metadataSync
 module.exports.resizeSync = resizeSync
 module.exports.cropSync = cropSync
@@ -337,6 +340,8 @@ module.exports.blurhash = blurhash
 module.exports.thumbhash = thumbhash
 module.exports.thumbhashToRgba = thumbhashToRgba
 module.exports.version = version
+module.exports.toTensorSync = toTensorSync
+module.exports.toTensor = toTensor
 module.exports.writeExifSync = writeExifSync
 module.exports.writeExif = writeExif
 module.exports.stripExifSync = stripExifSync

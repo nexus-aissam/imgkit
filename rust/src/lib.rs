@@ -13,6 +13,7 @@ mod error;
 mod metadata;
 mod metadata_write;
 mod resize;
+mod tensor;
 mod transform;
 
 // Public types module
@@ -339,6 +340,45 @@ pub async fn thumbhash_to_rgba(hash: Buffer) -> Result<ThumbHashDecodeResult> {
 #[napi]
 pub fn version() -> String {
   env!("CARGO_PKG_VERSION").to_string()
+}
+
+// ============================================
+// TENSOR FUNCTIONS
+// ============================================
+
+/// Convert image to tensor format synchronously
+/// Optimized for ML preprocessing with SIMD and parallel processing
+#[napi]
+pub fn to_tensor_sync(input: Buffer, options: Option<TensorOptions>) -> Result<TensorResult> {
+  let opts = options.unwrap_or(TensorOptions {
+    dtype: None,
+    layout: None,
+    normalization: None,
+    width: None,
+    height: None,
+    batch: None,
+  });
+  tensor::image_to_tensor(&input, &opts).map_err(|e| e.into())
+}
+
+/// Convert image to tensor format asynchronously
+/// Optimized for ML preprocessing with SIMD and parallel processing
+#[napi]
+pub async fn to_tensor(input: Buffer, options: Option<TensorOptions>) -> Result<TensorResult> {
+  tokio::task::spawn_blocking(move || {
+    let opts = options.unwrap_or(TensorOptions {
+      dtype: None,
+      layout: None,
+      normalization: None,
+      width: None,
+      height: None,
+      batch: None,
+    });
+    tensor::image_to_tensor(&input, &opts)
+  })
+  .await
+  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+  .map_err(|e| e.into())
 }
 
 // ============================================

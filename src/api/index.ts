@@ -18,3 +18,5 @@ export {
   thumbhashToDataUrl,
 } from "./thumbhash";
 export { writeExif, writeExifSync, stripExif, stripExifSync } from "./exif";
+export { toTensor, toTensorSync } from "./tensor";
+export type { EnhancedTensorResult } from "./tensor";

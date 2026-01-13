@@ -4,6 +4,8 @@ import {
   metadataSync,
   resize,
   resizeSync,
+  crop,
+  cropSync,
   toJpeg,
   toJpegSync,
   toPng,
@@ -37,7 +39,6 @@ beforeAll(async () => {
 });
 
 describe("bun-image-turbo - Complete Test Suite", () => {
-
   // ============================================
   // VERSION
   // ============================================
@@ -100,7 +101,7 @@ describe("bun-image-turbo - Complete Test Suite", () => {
       const resized = await resize(jpegImage, {
         width: 300,
         height: 200,
-        fit: "Fill" as any
+        fit: "Fill" as any,
       });
       const meta = await metadata(resized);
       expect(meta.width).toBe(300);
@@ -117,7 +118,7 @@ describe("bun-image-turbo - Complete Test Suite", () => {
       const cover = await resize(jpegImage, {
         width: 200,
         height: 200,
-        fit: "Cover" as any
+        fit: "Cover" as any,
       });
       const coverMeta = await metadata(cover);
       // Cover mode maintains aspect ratio while covering target area
@@ -129,11 +130,99 @@ describe("bun-image-turbo - Complete Test Suite", () => {
       const contain = await resize(jpegImage, {
         width: 200,
         height: 200,
-        fit: "Contain" as any
+        fit: "Contain" as any,
       });
       const containMeta = await metadata(contain);
       expect(containMeta.width).toBeLessThanOrEqual(200);
       expect(containMeta.height).toBeLessThanOrEqual(200);
+    });
+  });
+
+  // ============================================
+  // CROP
+  // ============================================
+  describe("crop()", () => {
+    it("should crop with explicit coordinates (async)", async () => {
+      const cropped = await crop(jpegImage, {
+        x: 100,
+        y: 50,
+        width: 400,
+        height: 300,
+      });
+      const meta = await metadata(cropped);
+      expect(meta.width).toBe(400);
+      expect(meta.height).toBe(300);
+    });
+
+    it("should crop with explicit coordinates (sync)", () => {
+      const cropped = cropSync(jpegImage, {
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 200,
+      });
+      const meta = metadataSync(cropped);
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(200);
+    });
+
+    it("should crop to aspect ratio 1:1 (centered)", async () => {
+      const cropped = await crop(jpegImage, { aspectRatio: "1:1" });
+      const meta = await metadata(cropped);
+      // 800x600 -> 1:1 should be 600x600 (centered)
+      expect(meta.width).toBe(600);
+      expect(meta.height).toBe(600);
+    });
+
+    it("should crop to aspect ratio 16:9", async () => {
+      const cropped = await crop(jpegImage, { aspectRatio: "16:9" });
+      const meta = await metadata(cropped);
+      // 800x600 -> 16:9, width stays, height adjusts
+      expect(meta.width).toBe(800);
+      expect(meta.height).toBe(450);
+    });
+
+    it("should crop with gravity north", async () => {
+      const cropped = await crop(jpegImage, {
+        width: 400,
+        height: 300,
+        gravity: "north",
+      });
+      const meta = await metadata(cropped);
+      expect(meta.width).toBe(400);
+      expect(meta.height).toBe(300);
+    });
+
+    it("should crop with gravity center", async () => {
+      const cropped = await crop(jpegImage, {
+        width: 300,
+        height: 300,
+        gravity: "center",
+      });
+      const meta = await metadata(cropped);
+      expect(meta.width).toBe(300);
+      expect(meta.height).toBe(300);
+    });
+
+    it("should crop with gravity southEast", async () => {
+      const cropped = await crop(jpegImage, {
+        width: 200,
+        height: 200,
+        gravity: "southEast",
+      });
+      const meta = await metadata(cropped);
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(200);
+    });
+
+    it("should crop to aspect ratio with gravity", async () => {
+      const cropped = await crop(jpegImage, {
+        aspectRatio: "1:1",
+        gravity: "north",
+      });
+      const meta = await metadata(cropped);
+      expect(meta.width).toBe(600);
+      expect(meta.height).toBe(600);
     });
   });
 
@@ -218,7 +307,7 @@ describe("bun-image-turbo - Complete Test Suite", () => {
         resize: { width: 300 },
         output: {
           format: "WebP" as any,
-          webp: { quality: 85 }
+          webp: { quality: 85 },
         },
       });
       const meta = await metadata(result);
@@ -241,7 +330,7 @@ describe("bun-image-turbo - Complete Test Suite", () => {
         resize: { width: 200 },
         output: {
           format: "Jpeg" as any,
-          jpeg: { quality: 80 }
+          jpeg: { quality: 80 },
         },
         blur: 2.0,
         sharpen: 1.5,
@@ -421,7 +510,11 @@ describe("bun-image-turbo - Complete Test Suite", () => {
         await resize(jpegImage, { width: 200 });
       }
       const elapsed = performance.now() - start;
-      console.log(`  10x resize: ${elapsed.toFixed(2)}ms (${(elapsed/10).toFixed(2)}ms avg)`);
+      console.log(
+        `  10x resize: ${elapsed.toFixed(2)}ms (${(elapsed / 10).toFixed(
+          2
+        )}ms avg)`
+      );
       expect(elapsed).toBeLessThan(5000);
     });
 
@@ -431,7 +524,11 @@ describe("bun-image-turbo - Complete Test Suite", () => {
         await toWebp(jpegImage, { quality: 85 });
       }
       const elapsed = performance.now() - start;
-      console.log(`  10x toWebp: ${elapsed.toFixed(2)}ms (${(elapsed/10).toFixed(2)}ms avg)`);
+      console.log(
+        `  10x toWebp: ${elapsed.toFixed(2)}ms (${(elapsed / 10).toFixed(
+          2
+        )}ms avg)`
+      );
       expect(elapsed).toBeLessThan(5000);
     });
   });

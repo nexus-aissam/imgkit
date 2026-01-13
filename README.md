@@ -39,8 +39,8 @@
 
 - **Native HEIC/HEIF** support
 - **ThumbHash & BlurHash** placeholders
+- **ML Tensor Conversion** (SIMD-accelerated)
 - **EXIF metadata** read/write
-- **Zero dependencies** runtime
 
 </td>
 </tr>
@@ -63,10 +63,10 @@ npm install bun-image-turbo
 
 | Package Manager | Status | Tests |
 |-----------------|:------:|------:|
-| Bun | ✅ | 56 pass |
-| npm | ✅ | 32 pass |
-| yarn | ✅ | 32 pass |
-| pnpm | ✅ | 32 pass |
+| Bun | ✅ | 87 pass |
+| npm | ✅ | 40 pass |
+| yarn | ✅ | 40 pass |
+| pnpm | ✅ | 40 pass |
 
 </details>
 
@@ -81,7 +81,8 @@ import {
   crop,
   transform,
   toWebp,
-  thumbhash
+  thumbhash,
+  toTensor
 } from 'bun-image-turbo';
 
 // Load image
@@ -108,6 +109,14 @@ const youtube = await transform(buffer, {
 // Generate ThumbHash placeholder (better than BlurHash)
 const { dataUrl } = await thumbhash(buffer);
 // Use directly: <img src={dataUrl} />
+
+// ML Tensor conversion (first JS package with native SIMD!)
+const tensor = await toTensor(buffer, {
+  width: 224, height: 224,
+  normalization: 'Imagenet',
+  layout: 'Chw', batch: true
+});
+// Shape: [1, 3, 224, 224] - Ready for PyTorch/ONNX!
 ```
 
 <br />
@@ -133,6 +142,7 @@ const { dataUrl } = await thumbhash(buffer);
 <tr><td><code>toWebp()</code></td><td>Convert to WebP</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>blurhash()</code></td><td>Generate BlurHash placeholder</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>thumbhash()</code></td><td>Generate ThumbHash placeholder</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>toTensor()</code></td><td>Convert to ML tensor (SIMD-accelerated)</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>writeExif()</code></td><td>Write EXIF metadata</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>stripExif()</code></td><td>Remove EXIF metadata</td><td align="center">✅</td><td align="center">✅</td></tr>
 </tbody>
@@ -352,6 +362,38 @@ const withMetadata = await writeExif(webp, {
 </details>
 
 <details>
+<summary><strong>ML Tensor Conversion</strong></summary>
+
+```typescript
+import { toTensor } from 'bun-image-turbo';
+
+const buffer = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
+
+// PyTorch/ONNX (CHW layout, ImageNet normalization)
+const tensor = await toTensor(buffer, {
+  width: 224,
+  height: 224,
+  normalization: 'Imagenet',  // ResNet, VGG, EfficientNet
+  layout: 'Chw',              // Channel-first for PyTorch
+  batch: true                 // Add batch dimension
+});
+
+// Shape: [1, 3, 224, 224] - Ready for inference!
+const float32Data = tensor.toFloat32Array();
+
+// TensorFlow.js (HWC layout)
+const tfTensor = await toTensor(buffer, {
+  width: 224, height: 224,
+  normalization: 'ZeroOne',
+  layout: 'Hwc'
+});
+```
+
+**Built-in normalizations:** `Imagenet`, `Clip`, `ZeroOne`, `NegOneOne`
+
+</details>
+
+<details>
 <summary><strong>HTTP Image Server</strong></summary>
 
 ```typescript
@@ -395,6 +437,7 @@ Bun.serve({
 | WebP Codec | libwebp | Google's optimized encoder |
 | HEIC Decoder | libheif-rs | Native Apple format support |
 | Placeholders | thumbhash + blurhash | Compact image previews |
+| Tensor Conversion | Native Rust + Rayon | SIMD-accelerated ML preprocessing |
 | Node Bindings | napi-rs | Zero-copy buffer handling |
 
 <br />

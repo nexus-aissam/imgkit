@@ -16,6 +16,8 @@ import {
   transformSync,
   blurhash,
   blurhashSync,
+  toTensor,
+  toTensorSync,
   version,
 } from "../../dist/index.mjs";
 
@@ -130,6 +132,122 @@ describe("bun-image-turbo", () => {
 
       expect(meta.width).toBe(200);
       expect(meta.height).toBe(200);
+    });
+
+    it("should crop with gravity center (default)", async () => {
+      const cropped = await crop(testImage, { width: 300, height: 300, gravity: "center" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(300);
+      expect(meta.height).toBe(300);
+    });
+
+    it("should crop with gravity south", async () => {
+      const cropped = await crop(testImage, { width: 400, height: 200, gravity: "south" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(400);
+      expect(meta.height).toBe(200);
+    });
+
+    it("should crop with gravity east", async () => {
+      const cropped = await crop(testImage, { width: 200, height: 400, gravity: "east" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(400);
+    });
+
+    it("should crop with gravity west", async () => {
+      const cropped = await crop(testImage, { width: 200, height: 400, gravity: "west" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(200);
+      expect(meta.height).toBe(400);
+    });
+
+    it("should crop with gravity northWest", async () => {
+      const cropped = await crop(testImage, { width: 250, height: 250, gravity: "northWest" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(250);
+      expect(meta.height).toBe(250);
+    });
+
+    it("should crop with gravity northEast", async () => {
+      const cropped = await crop(testImage, { width: 250, height: 250, gravity: "northEast" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(250);
+      expect(meta.height).toBe(250);
+    });
+
+    it("should crop with gravity southWest", async () => {
+      const cropped = await crop(testImage, { width: 250, height: 250, gravity: "southWest" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(250);
+      expect(meta.height).toBe(250);
+    });
+
+    it("should crop to aspect ratio 4:3", async () => {
+      const cropped = await crop(testImage, { aspectRatio: "4:3" });
+      const meta = await metadata(cropped);
+
+      // 800x600 -> 4:3 should be 800x600 (already 4:3)
+      expect(meta.width).toBe(800);
+      expect(meta.height).toBe(600);
+    });
+
+    it("should crop to aspect ratio 3:2", async () => {
+      const cropped = await crop(testImage, { aspectRatio: "3:2" });
+      const meta = await metadata(cropped);
+
+      // 800x600 is 4:3, crop to 3:2 (wider) keeps width, adjusts height
+      expect(meta.width).toBe(800);
+      expect(meta.height).toBe(533); // 800 / 3 * 2 = 533.33
+    });
+
+    it("should crop to aspect ratio 9:16 (portrait)", async () => {
+      const cropped = await crop(testImage, { aspectRatio: "9:16" });
+      const meta = await metadata(cropped);
+
+      // 800x600 -> 9:16 portrait, height stays, width adjusts
+      expect(meta.width).toBe(338); // 600 / 16 * 9 = 337.5 rounds to 338
+      expect(meta.height).toBe(600);
+    });
+
+    it("should crop to aspect ratio with gravity north", async () => {
+      const cropped = await crop(testImage, { aspectRatio: "1:1", gravity: "north" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(600);
+      expect(meta.height).toBe(600);
+    });
+
+    it("should crop to aspect ratio with gravity southWest", async () => {
+      const cropped = await crop(testImage, { aspectRatio: "16:9", gravity: "southWest" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(800);
+      expect(meta.height).toBe(450);
+    });
+
+    it("should handle crop at image boundaries", async () => {
+      // Crop from the edge of the image
+      const cropped = await crop(testImage, { x: 700, y: 500, width: 100, height: 100 });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(100);
+      expect(meta.height).toBe(100);
+    });
+
+    it("should crop small region from center", async () => {
+      const cropped = await crop(testImage, { width: 50, height: 50, gravity: "center" });
+      const meta = await metadata(cropped);
+
+      expect(meta.width).toBe(50);
+      expect(meta.height).toBe(50);
     });
   });
 
@@ -304,6 +422,118 @@ describe("bun-image-turbo", () => {
       const emptyBuffer = Buffer.alloc(0);
 
       await expect(metadata(emptyBuffer)).rejects.toThrow();
+    });
+  });
+
+  describe("toTensor", () => {
+    it("should convert image to tensor (async)", async () => {
+      const tensor = await toTensor(testImage, {
+        width: 224,
+        height: 224,
+        normalization: "Imagenet",
+        layout: "Chw",
+      });
+
+      expect(tensor.shape).toEqual([3, 224, 224]);
+      expect(tensor.dtype).toBe("Float32");
+      expect(tensor.layout).toBe("Chw");
+      expect(tensor.width).toBe(224);
+      expect(tensor.height).toBe(224);
+      expect(tensor.channels).toBe(3);
+      // Float32: 3 * 224 * 224 * 4 bytes = 602112 bytes
+      expect(tensor.data.length).toBe(3 * 224 * 224 * 4);
+    });
+
+    it("should convert image to tensor (sync)", () => {
+      const tensor = toTensorSync(testImage, {
+        width: 224,
+        height: 224,
+        layout: "Chw",
+      });
+
+      expect(tensor.shape).toEqual([3, 224, 224]);
+      expect(tensor.dtype).toBe("Float32");
+    });
+
+    it("should add batch dimension when requested", async () => {
+      const tensor = await toTensor(testImage, {
+        width: 224,
+        height: 224,
+        batch: true,
+      });
+
+      expect(tensor.shape).toEqual([1, 3, 224, 224]);
+    });
+
+    it("should use HWC layout for TensorFlow", async () => {
+      const tensor = await toTensor(testImage, {
+        width: 224,
+        height: 224,
+        layout: "Hwc",
+      });
+
+      expect(tensor.shape).toEqual([224, 224, 3]);
+      expect(tensor.layout).toBe("Hwc");
+    });
+
+    it("should support Uint8 dtype", async () => {
+      const tensor = await toTensor(testImage, {
+        width: 100,
+        height: 100,
+        dtype: "Uint8",
+      });
+
+      expect(tensor.dtype).toBe("Uint8");
+      // Uint8: 3 * 100 * 100 * 1 byte = 30000 bytes
+      expect(tensor.data.length).toBe(3 * 100 * 100);
+    });
+
+    it("should convert to Float32Array", async () => {
+      const tensor = await toTensor(testImage, {
+        width: 64,
+        height: 64,
+        normalization: "ZeroOne",
+      });
+
+      const float32 = tensor.toFloat32Array();
+      expect(float32).toBeInstanceOf(Float32Array);
+      expect(float32.length).toBe(3 * 64 * 64);
+      // ZeroOne normalization: values should be between 0 and 1
+      expect(float32[0]).toBeGreaterThanOrEqual(0);
+      expect(float32[0]).toBeLessThanOrEqual(1);
+    });
+
+    it("should convert to Uint8Array", async () => {
+      const tensor = await toTensor(testImage, {
+        width: 64,
+        height: 64,
+        dtype: "Uint8",
+      });
+
+      const uint8 = tensor.toUint8Array();
+      expect(uint8).toBeInstanceOf(Uint8Array);
+      expect(uint8.length).toBe(3 * 64 * 64);
+    });
+
+    it("should apply CLIP normalization", async () => {
+      const tensor = await toTensor(testImage, {
+        width: 224,
+        height: 224,
+        normalization: "Clip",
+      });
+
+      expect(tensor.dtype).toBe("Float32");
+      const float32 = tensor.toFloat32Array();
+      // CLIP normalized values can be negative (after subtracting mean)
+      expect(float32.length).toBe(3 * 224 * 224);
+    });
+
+    it("should work without resize (original size)", async () => {
+      const tensor = await toTensor(testImage);
+
+      expect(tensor.width).toBe(800);
+      expect(tensor.height).toBe(600);
+      expect(tensor.shape).toEqual([3, 600, 800]);
     });
   });
 

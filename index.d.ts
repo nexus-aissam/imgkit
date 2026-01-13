@@ -218,6 +218,65 @@ export interface TransformOptions {
   /** EXIF metadata to write (for JPEG/WebP output) */
   exif?: ExifOptions
 }
+/** Tensor data type */
+export const enum TensorDtype {
+  /** 32-bit floating point (default) */
+  Float32 = 'Float32',
+  /** 8-bit unsigned integer (raw pixels) */
+  Uint8 = 'Uint8'
+}
+/** Tensor memory layout */
+export const enum TensorLayout {
+  /** Channel-Height-Width (PyTorch/ONNX default) */
+  Chw = 'Chw',
+  /** Height-Width-Channel (TensorFlow default) */
+  Hwc = 'Hwc'
+}
+/** Normalization preset */
+export const enum TensorNormalization {
+  /** ImageNet normalization (mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]) */
+  Imagenet = 'Imagenet',
+  /** CLIP normalization (mean=[0.481,0.458,0.408], std=[0.269,0.261,0.276]) */
+  Clip = 'Clip',
+  /** Scale to [0, 1] range (divide by 255) */
+  ZeroOne = 'ZeroOne',
+  /** Scale to [-1, 1] range */
+  NegOneOne = 'NegOneOne',
+  /** No normalization (raw 0-255 values) */
+  None = 'None'
+}
+/** Options for tensor conversion */
+export interface TensorOptions {
+  /** Output data type (default: Float32) */
+  dtype?: TensorDtype
+  /** Memory layout (default: CHW for PyTorch/ONNX) */
+  layout?: TensorLayout
+  /** Normalization preset (default: None) */
+  normalization?: TensorNormalization
+  /** Target width for resize before conversion */
+  width?: number
+  /** Target height for resize before conversion */
+  height?: number
+  /** Add batch dimension (default: false) */
+  batch?: boolean
+}
+/** Tensor conversion result */
+export interface TensorResult {
+  /** Raw tensor data (Float32Array or Uint8Array bytes) */
+  data: Array<number>
+  /** Shape array (e.g., [3, 224, 224] or [1, 3, 224, 224]) */
+  shape: Array<number>
+  /** Data type used */
+  dtype: TensorDtype
+  /** Memory layout used */
+  layout: TensorLayout
+  /** Image width */
+  width: number
+  /** Image height */
+  height: number
+  /** Number of channels (always 3 for RGB) */
+  channels: number
+}
 /** EXIF metadata options for writing */
 export interface ExifOptions {
   /** Image description / caption / AI prompt */
@@ -293,6 +352,16 @@ export declare function thumbhash(input: Buffer): Promise<ThumbHashResult>
 export declare function thumbhashToRgba(hash: Buffer): Promise<ThumbHashDecodeResult>
 /** Get library version */
 export declare function version(): string
+/**
+ * Convert image to tensor format synchronously
+ * Optimized for ML preprocessing with SIMD and parallel processing
+ */
+export declare function toTensorSync(input: Buffer, options?: TensorOptions | undefined | null): TensorResult
+/**
+ * Convert image to tensor format asynchronously
+ * Optimized for ML preprocessing with SIMD and parallel processing
+ */
+export declare function toTensor(input: Buffer, options?: TensorOptions | undefined | null): Promise<TensorResult>
 /** Write EXIF metadata to a WebP image synchronously */
 export declare function writeExifSync(input: Buffer, options: ExifOptions): Buffer
 /** Write EXIF metadata to a WebP image asynchronously */

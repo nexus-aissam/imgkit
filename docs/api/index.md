@@ -15,6 +15,7 @@ Complete API documentation for bun-image-turbo.
 | [`transform()`](/api/transform) | Apply multiple transformations in one pass |
 | [`blurhash()`](/api/blurhash) | Generate BlurHash placeholder string |
 | [`thumbhash()`](/api/thumbhash) | Generate ThumbHash placeholder (better quality) |
+| [`toTensor()`](/api/tensor) | Convert image to ML tensor (SIMD-accelerated) |
 | [`writeExif()`](/api/exif) | Write EXIF metadata to JPEG/WebP |
 | [`stripExif()`](/api/exif#stripexif) | Remove EXIF metadata from images |
 | `version()` | Get library version |
@@ -34,6 +35,7 @@ All functions have sync variants:
 | `transform()` | `transformSync()` |
 | `blurhash()` | `blurhashSync()` |
 | `thumbhash()` | `thumbhashSync()` |
+| `toTensor()` | `toTensorSync()` |
 | `writeExif()` | `writeExifSync()` |
 | `stripExif()` | `stripExifSync()` |
 
@@ -50,11 +52,12 @@ import {
   transform,
   blurhash,
   thumbhash,
+  toTensor,
   version
 } from 'bun-image-turbo';
 
 // Check version
-console.log(version()); // "1.6.0"
+console.log(version()); // "1.7.0"
 
 // Get metadata (returns many fields - see metadata docs)
 const info = await metadata(buffer);
@@ -86,6 +89,14 @@ const { hash } = await blurhash(buffer, 4, 3);
 // Generate thumbhash (better quality, alpha support)
 const { dataUrl } = await thumbhash(buffer);
 // Use directly: <img src={dataUrl} />
+
+// Convert to ML tensor (first JS package with native SIMD!)
+const tensor = await toTensor(buffer, {
+  width: 224, height: 224,
+  normalization: 'Imagenet',
+  layout: 'Chw', batch: true
+});
+// Shape: [1, 3, 224, 224] - Ready for PyTorch/ONNX!
 ```
 
 ::: warning Case Sensitivity
