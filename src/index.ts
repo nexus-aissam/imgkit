@@ -47,6 +47,10 @@ export type {
   TensorNormalization,
   TensorOptions,
   TensorResult,
+  HashAlgorithm,
+  HashSize,
+  ImageHashOptions,
+  ImageHashResult,
 } from "./types";
 export type { EnhancedTensorResult } from "./api";
 
@@ -79,6 +83,10 @@ export {
   stripExifSync,
   toTensor,
   toTensorSync,
+  imageHash,
+  imageHashSync,
+  imageHashDistance,
+  imageHashDistanceSync,
 } from "./api";
 
 // Import for version and default export
@@ -120,6 +128,10 @@ import {
   stripExifSync,
   toTensor,
   toTensorSync,
+  imageHash,
+  imageHashSync,
+  imageHashDistance,
+  imageHashDistanceSync,
 } from "./api";
 
 // Default export for convenience
@@ -151,5 +163,9 @@ export default {
   stripExifSync,
   toTensor,
   toTensorSync,
+  imageHash,
+  imageHashSync,
+  imageHashDistance,
+  imageHashDistanceSync,
   version,
 };

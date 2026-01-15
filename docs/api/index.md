@@ -16,6 +16,8 @@ Complete API documentation for bun-image-turbo.
 | [`blurhash()`](/api/blurhash) | Generate BlurHash placeholder string |
 | [`thumbhash()`](/api/thumbhash) | Generate ThumbHash placeholder (better quality) |
 | [`toTensor()`](/api/tensor) | Convert image to ML tensor (SIMD-accelerated) |
+| [`imageHash()`](/api/image-hash) | Generate perceptual hash for similarity detection |
+| [`imageHashDistance()`](/api/image-hash#imagehash-distance) | Calculate hamming distance between hashes |
 | [`writeExif()`](/api/exif) | Write EXIF metadata to JPEG/WebP |
 | [`stripExif()`](/api/exif#stripexif) | Remove EXIF metadata from images |
 | `version()` | Get library version |
@@ -36,6 +38,8 @@ All functions have sync variants:
 | `blurhash()` | `blurhashSync()` |
 | `thumbhash()` | `thumbhashSync()` |
 | `toTensor()` | `toTensorSync()` |
+| `imageHash()` | `imageHashSync()` |
+| `imageHashDistance()` | `imageHashDistanceSync()` |
 | `writeExif()` | `writeExifSync()` |
 | `stripExif()` | `stripExifSync()` |
 
@@ -53,11 +57,13 @@ import {
   blurhash,
   thumbhash,
   toTensor,
+  imageHash,
+  imageHashDistance,
   version
 } from 'bun-image-turbo';
 
 // Check version
-console.log(version()); // "1.7.9"
+console.log(version()); // "1.8.0"
 
 // Get metadata (returns many fields - see metadata docs)
 const info = await metadata(buffer);
@@ -97,6 +103,12 @@ const tensor = await toTensor(buffer, {
   layout: 'Chw', batch: true
 });
 // Shape: [1, 3, 224, 224] - Ready for PyTorch/ONNX!
+
+// Perceptual hash for similarity detection (first JS package!)
+const hash1 = await imageHash(image1, { algorithm: 'PHash' });
+const hash2 = await imageHash(image2, { algorithm: 'PHash' });
+const distance = await imageHashDistance(hash1.hash, hash2.hash);
+// distance < 5 = very similar, < 10 = similar, > 10 = different
 ```
 
 ::: warning Case Sensitivity

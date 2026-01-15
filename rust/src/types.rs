@@ -335,6 +335,51 @@ pub struct TensorResult {
   pub channels: u32,
 }
 
+// ============================================
+// PERCEPTUAL HASH TYPES
+// ============================================
+
+/// Perceptual hash algorithm
+#[derive(Clone)]
+#[napi(string_enum)]
+pub enum HashAlgorithm {
+  /// Perceptual hash using DCT (best for most use cases)
+  PHash,
+  /// Difference hash using gradients (fast, good for similar images)
+  DHash,
+  /// Average hash (fastest, least robust)
+  AHash,
+  /// Block hash (good balance of speed and accuracy)
+  BlockHash,
+}
+
+/// Hash size (dimensions of the hash grid)
+#[derive(Clone)]
+#[napi(string_enum)]
+pub enum HashSize {
+  /// 8x8 hash (64 bits) - fastest, good for most cases
+  Size8,
+  /// 16x16 hash (256 bits) - more accurate
+  Size16,
+  /// 32x32 hash (1024 bits) - highest accuracy
+  Size32,
+}
+
+/// Perceptual hash result
+#[napi(object)]
+pub struct ImageHashResult {
+  /// The hash as a base64-encoded string
+  pub hash: String,
+  /// Original image width
+  pub width: u32,
+  /// Original image height
+  pub height: u32,
+  /// Hash size used (8, 16, or 32)
+  pub hash_size: u32,
+  /// Algorithm used
+  pub algorithm: String,
+}
+
 /// EXIF metadata options for writing
 #[napi(object)]
 #[derive(Clone)]

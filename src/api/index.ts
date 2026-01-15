@@ -20,3 +20,9 @@ export {
 export { writeExif, writeExifSync, stripExif, stripExifSync } from "./exif";
 export { toTensor, toTensorSync } from "./tensor";
 export type { EnhancedTensorResult } from "./tensor";
+export {
+  imageHash,
+  imageHashSync,
+  imageHashDistance,
+  imageHashDistanceSync,
+} from "./image-hash";

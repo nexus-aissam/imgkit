@@ -348,3 +348,42 @@ export interface NapiTensorOptions {
   height?: number;
   batch?: boolean;
 }
+
+// ============================================
+// PERCEPTUAL HASH TYPES
+// ============================================
+
+/** Perceptual hash algorithm */
+export type HashAlgorithm =
+  | 'PHash'     // Perceptual hash using DCT (best for most use cases)
+  | 'DHash'     // Difference hash using gradients (fast, good for similar images)
+  | 'AHash'     // Average hash (fastest, least robust)
+  | 'BlockHash'; // Block hash (good balance of speed and accuracy)
+
+/** Hash size (dimensions of the hash grid) */
+export type HashSize =
+  | 'Size8'   // 8x8 hash (64 bits) - fastest, good for most cases
+  | 'Size16'  // 16x16 hash (256 bits) - more accurate
+  | 'Size32'; // 32x32 hash (1024 bits) - highest accuracy
+
+/** Perceptual hash options */
+export interface ImageHashOptions {
+  /** Hash algorithm (default: PHash) */
+  algorithm?: HashAlgorithm;
+  /** Hash size (default: Size8) */
+  size?: HashSize;
+}
+
+/** Perceptual hash result */
+export interface ImageHashResult {
+  /** The hash as a base64-encoded string */
+  hash: string;
+  /** Original image width */
+  width: number;
+  /** Original image height */
+  height: number;
+  /** Hash size used (8, 16, or 32) */
+  hashSize: number;
+  /** Algorithm used */
+  algorithm: string;
+}

@@ -142,6 +142,75 @@ pub fn thumbhash_sync(input: Buffer) -> Result<ThumbHashResult> {
   })
 }
 
+// ============================================
+// PERCEPTUAL HASH SYNC FUNCTIONS
+// ============================================
+
+/// Generate perceptual hash from image synchronously
+/// Use for duplicate detection, content moderation, reverse image search
+#[napi]
+pub fn image_hash_sync(
+  input: Buffer,
+  algorithm: Option<HashAlgorithm>,
+  size: Option<HashSize>,
+) -> Result<ImageHashResult> {
+  use image_hasher::{HasherConfig, HashAlg};
+
+  let img = decode::decode_image(&input)?;
+  let (w, h) = image::GenericImageView::dimensions(&img);
+
+  let hash_size = match size.unwrap_or(HashSize::Size8) {
+    HashSize::Size8 => 8,
+    HashSize::Size16 => 16,
+    HashSize::Size32 => 32,
+  };
+
+  let alg_enum = algorithm.clone().unwrap_or(HashAlgorithm::PHash);
+  let alg = match &alg_enum {
+    HashAlgorithm::PHash => HashAlg::Gradient,
+    HashAlgorithm::DHash => HashAlg::DoubleGradient,
+    HashAlgorithm::AHash => HashAlg::Mean,
+    HashAlgorithm::BlockHash => HashAlg::Blockhash,
+  };
+
+  let hasher = HasherConfig::new()
+    .hash_size(hash_size, hash_size)
+    .hash_alg(alg)
+    .to_hasher();
+
+  let hash = hasher.hash_image(&img);
+
+  let alg_name = match alg_enum {
+    HashAlgorithm::PHash => "PHash",
+    HashAlgorithm::DHash => "DHash",
+    HashAlgorithm::AHash => "AHash",
+    HashAlgorithm::BlockHash => "BlockHash",
+  };
+
+  Ok(ImageHashResult {
+    hash: hash.to_base64(),
+    width: w,
+    height: h,
+    hash_size,
+    algorithm: alg_name.to_string(),
+  })
+}
+
+/// Calculate hamming distance between two perceptual hashes synchronously
+/// Returns 0 for identical images, higher values for more different images
+/// Typical thresholds: <5 = very similar, <10 = similar, >10 = different
+#[napi]
+pub fn image_hash_distance_sync(hash1: String, hash2: String) -> Result<u32> {
+  use image_hasher::ImageHash;
+
+  let h1: ImageHash<Vec<u8>> = ImageHash::from_base64(&hash1)
+    .map_err(|e| Error::from_reason(format!("Invalid hash1: {:?}", e)))?;
+  let h2: ImageHash<Vec<u8>> = ImageHash::from_base64(&hash2)
+    .map_err(|e| Error::from_reason(format!("Invalid hash2: {:?}", e)))?;
+
+  Ok(h1.dist(&h2))
+}
+
 /// Decode thumbhash back to RGBA pixels synchronously
 #[napi]
 pub fn thumbhash_to_rgba_sync(hash: Buffer) -> Result<ThumbHashDecodeResult> {
@@ -330,6 +399,85 @@ pub async fn thumbhash_to_rgba(hash: Buffer) -> Result<ThumbHashDecodeResult> {
       width: w as u32,
       height: h as u32,
     })
+  })
+  .await
+  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+  .map_err(|e| e.into())
+}
+
+// ============================================
+// PERCEPTUAL HASH ASYNC FUNCTIONS
+// ============================================
+
+/// Generate perceptual hash from image asynchronously
+/// Use for duplicate detection, content moderation, reverse image search
+#[napi]
+pub async fn image_hash(
+  input: Buffer,
+  algorithm: Option<HashAlgorithm>,
+  size: Option<HashSize>,
+) -> Result<ImageHashResult> {
+  tokio::task::spawn_blocking(move || {
+    use image_hasher::{HasherConfig, HashAlg};
+
+    let img = decode::decode_image(&input)?;
+    let (w, h) = image::GenericImageView::dimensions(&img);
+
+    let hash_size = match size.unwrap_or(HashSize::Size8) {
+      HashSize::Size8 => 8,
+      HashSize::Size16 => 16,
+      HashSize::Size32 => 32,
+    };
+
+    let alg_enum = algorithm.clone().unwrap_or(HashAlgorithm::PHash);
+    let alg = match &alg_enum {
+      HashAlgorithm::PHash => HashAlg::Gradient,
+      HashAlgorithm::DHash => HashAlg::DoubleGradient,
+      HashAlgorithm::AHash => HashAlg::Mean,
+      HashAlgorithm::BlockHash => HashAlg::Blockhash,
+    };
+
+    let hasher = HasherConfig::new()
+      .hash_size(hash_size, hash_size)
+      .hash_alg(alg)
+      .to_hasher();
+
+    let hash = hasher.hash_image(&img);
+
+    let alg_name = match alg_enum {
+      HashAlgorithm::PHash => "PHash",
+      HashAlgorithm::DHash => "DHash",
+      HashAlgorithm::AHash => "AHash",
+      HashAlgorithm::BlockHash => "BlockHash",
+    };
+
+    Ok::<ImageHashResult, ImageError>(ImageHashResult {
+      hash: hash.to_base64(),
+      width: w,
+      height: h,
+      hash_size,
+      algorithm: alg_name.to_string(),
+    })
+  })
+  .await
+  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+  .map_err(|e| e.into())
+}
+
+/// Calculate hamming distance between two perceptual hashes asynchronously
+/// Returns 0 for identical images, higher values for more different images
+/// Typical thresholds: <5 = very similar, <10 = similar, >10 = different
+#[napi]
+pub async fn image_hash_distance(hash1: String, hash2: String) -> Result<u32> {
+  tokio::task::spawn_blocking(move || {
+    use image_hasher::ImageHash;
+
+    let h1: ImageHash<Vec<u8>> = ImageHash::from_base64(&hash1)
+      .map_err(|e| ImageError::ProcessingError(format!("Invalid hash1: {:?}", e)))?;
+    let h2: ImageHash<Vec<u8>> = ImageHash::from_base64(&hash2)
+      .map_err(|e| ImageError::ProcessingError(format!("Invalid hash2: {:?}", e)))?;
+
+    Ok::<u32, ImageError>(h1.dist(&h2))
   })
   .await
   .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?

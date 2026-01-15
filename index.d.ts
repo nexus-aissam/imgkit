@@ -101,6 +101,28 @@ export declare const enum FitMode {
   Outside = 'Outside'
 }
 
+/** Perceptual hash algorithm */
+export declare const enum HashAlgorithm {
+  /** Perceptual hash using DCT (best for most use cases) */
+  PHash = 'PHash',
+  /** Difference hash using gradients (fast, good for similar images) */
+  DHash = 'DHash',
+  /** Average hash (fastest, least robust) */
+  AHash = 'AHash',
+  /** Block hash (good balance of speed and accuracy) */
+  BlockHash = 'BlockHash'
+}
+
+/** Hash size (dimensions of the hash grid) */
+export declare const enum HashSize {
+  /** 8x8 hash (64 bits) - fastest, good for most cases */
+  Size8 = 'Size8',
+  /** 16x16 hash (256 bits) - more accurate */
+  Size16 = 'Size16',
+  /** 32x32 hash (1024 bits) - highest accuracy */
+  Size32 = 'Size32'
+}
+
 /** Image format enum */
 export declare const enum ImageFormat {
   Jpeg = 'Jpeg',
@@ -113,6 +135,46 @@ export declare const enum ImageFormat {
   Heic = 'Heic',
   Avif = 'Avif'
 }
+
+/**
+ * Generate perceptual hash from image asynchronously
+ * Use for duplicate detection, content moderation, reverse image search
+ */
+export declare function imageHash(input: Buffer, algorithm?: HashAlgorithm | undefined | null, size?: HashSize | undefined | null): Promise<ImageHashResult>
+
+/**
+ * Calculate hamming distance between two perceptual hashes asynchronously
+ * Returns 0 for identical images, higher values for more different images
+ * Typical thresholds: <5 = very similar, <10 = similar, >10 = different
+ */
+export declare function imageHashDistance(hash1: string, hash2: string): Promise<number>
+
+/**
+ * Calculate hamming distance between two perceptual hashes synchronously
+ * Returns 0 for identical images, higher values for more different images
+ * Typical thresholds: <5 = very similar, <10 = similar, >10 = different
+ */
+export declare function imageHashDistanceSync(hash1: string, hash2: string): number
+
+/** Perceptual hash result */
+export interface ImageHashResult {
+  /** The hash as a base64-encoded string */
+  hash: string
+  /** Original image width */
+  width: number
+  /** Original image height */
+  height: number
+  /** Hash size used (8, 16, or 32) */
+  hashSize: number
+  /** Algorithm used */
+  algorithm: string
+}
+
+/**
+ * Generate perceptual hash from image synchronously
+ * Use for duplicate detection, content moderation, reverse image search
+ */
+export declare function imageHashSync(input: Buffer, algorithm?: HashAlgorithm | undefined | null, size?: HashSize | undefined | null): ImageHashResult
 
 /** Image metadata (similar to sharp's output) */
 export interface ImageMetadata {

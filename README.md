@@ -39,6 +39,7 @@
 
 - **Native HEIC/HEIF** support
 - **ThumbHash & BlurHash** placeholders
+- **Perceptual Hashing** (pHash/dHash)
 - **ML Tensor Conversion** (SIMD-accelerated)
 - **EXIF metadata** read/write
 
@@ -82,7 +83,9 @@ import {
   transform,
   toWebp,
   thumbhash,
-  toTensor
+  toTensor,
+  imageHash,
+  imageHashDistance
 } from 'bun-image-turbo';
 
 // Load image
@@ -117,6 +120,12 @@ const tensor = await toTensor(buffer, {
   layout: 'Chw', batch: true
 });
 // Shape: [1, 3, 224, 224] - Ready for PyTorch/ONNX!
+
+// Perceptual hashing for duplicate detection
+const hash1 = await imageHash(buffer, { algorithm: 'PHash' });
+const hash2 = await imageHash(otherBuffer, { algorithm: 'PHash' });
+const distance = await imageHashDistance(hash1.hash, hash2.hash);
+// distance < 5 = very similar images!
 ```
 
 <br />
@@ -143,6 +152,8 @@ const tensor = await toTensor(buffer, {
 <tr><td><code>blurhash()</code></td><td>Generate BlurHash placeholder</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>thumbhash()</code></td><td>Generate ThumbHash placeholder</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>toTensor()</code></td><td>Convert to ML tensor (SIMD-accelerated)</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>imageHash()</code></td><td>Generate perceptual hash for similarity</td><td align="center">✅</td><td align="center">✅</td></tr>
+<tr><td><code>imageHashDistance()</code></td><td>Compare perceptual hashes</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>writeExif()</code></td><td>Write EXIF metadata</td><td align="center">✅</td><td align="center">✅</td></tr>
 <tr><td><code>stripExif()</code></td><td>Remove EXIF metadata</td><td align="center">✅</td><td align="center">✅</td></tr>
 </tbody>
@@ -394,6 +405,38 @@ const tfTensor = await toTensor(buffer, {
 </details>
 
 <details>
+<summary><strong>Perceptual Hashing (Duplicate Detection)</strong></summary>
+
+```typescript
+import { imageHash, imageHashDistance } from 'bun-image-turbo';
+
+// Generate perceptual hash
+const hash1 = await imageHash(image1Buffer, { algorithm: 'PHash' });
+const hash2 = await imageHash(image2Buffer, { algorithm: 'PHash' });
+
+// Compare similarity (0 = identical, lower = more similar)
+const distance = await imageHashDistance(hash1.hash, hash2.hash);
+
+if (distance < 5) {
+  console.log('Images are very similar (likely duplicates)');
+} else if (distance < 10) {
+  console.log('Images are somewhat similar');
+} else {
+  console.log('Images are different');
+}
+
+// Available algorithms:
+// - PHash: DCT-based, most robust (recommended)
+// - DHash: Gradient-based, fast
+// - AHash: Average-based, fastest
+// - BlockHash: Block-based, balanced
+```
+
+**Use cases:** Duplicate detection, content moderation, reverse image search, near-match finding.
+
+</details>
+
+<details>
 <summary><strong>HTTP Image Server</strong></summary>
 
 ```typescript
@@ -438,6 +481,7 @@ Bun.serve({
 | HEIC Decoder | libheif-rs | Native Apple format support |
 | Placeholders | thumbhash + blurhash | Compact image previews |
 | Tensor Conversion | Native Rust + Rayon | SIMD-accelerated ML preprocessing |
+| Perceptual Hash | image_hasher | Duplicate detection & similarity |
 | Node Bindings | napi-rs | Zero-copy buffer handling |
 
 <br />
