@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-01-25
+
+### Added
+
+- **Bun Single-File Executable Support** - Native module now works with `bun build --compile` (Issue #8)
+  - New `imgkit-build` CLI tool automates compilation with native module handling
+  - Usage: `bunx imgkit-build --compile --outfile dist/app src/index.ts`
+  - Automatic native module discovery from executable directory
+  - No manual configuration or environment variables required
+
+- **Enhanced Loader** - Improved native module loading for Bun executables
+  - Detects Bun single-file executables via `$bunfs` filesystem
+  - Prioritizes executable directory for native module search
+  - Context-aware error messages with specific guidance
+
+### Technical Details
+
+- Native `.node` files cannot be embedded in Bun's virtual filesystem
+- `imgkit-build` automatically extracts and places native module next to executable
+- Loader uses `process.execPath` to find native module at runtime
+- Works seamlessly with standard development workflow
+
+---
+
 ## [2.0.2] - 2026-01-25
 
 ### Fixed

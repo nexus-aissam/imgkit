@@ -59,7 +59,7 @@ export default defineConfig({
       { text: "API", link: "/api/", activeMatch: "/api/" },
       { text: "Examples", link: "/examples/", activeMatch: "/examples/" },
       {
-        text: "v2.0.2",
+        text: "v2.1.0",
         items: [
           { text: "Changelog", link: "/changelog" },
           {
@@ -109,6 +109,7 @@ export default defineConfig({
             { text: "Architecture", link: "/guide/architecture" },
             { text: "Async vs Sync", link: "/guide/async-sync" },
             { text: "Error Handling", link: "/guide/error-handling" },
+            { text: "Bun Executables", link: "/guide/bun-executable" },
           ],
         },
       ],

@@ -16,6 +16,16 @@ import { createRequire } from "module";
 // Detect Bun runtime
 const isBun = typeof Bun !== "undefined";
 
+// Detect Bun single-file executable (paths start with $bunfs or /$bunfs)
+// Check multiple indicators since bundling can affect which ones are available
+const isBunExecutable = isBun && (
+  (typeof __dirname === "string" && __dirname.includes("$bunfs")) ||
+  (typeof import.meta?.url === "string" && import.meta.url.includes("$bunfs")) ||
+  (typeof import.meta?.dir === "string" && import.meta.dir.includes("$bunfs")) ||
+  // Also detect if execPath differs from expected bun location (indicates compiled binary)
+  (process.execPath && !process.execPath.includes("bun") && !process.execPath.includes("node"))
+);
+
 // Create require function that works in both ESM and CJS contexts
 // Bun: Use globalThis.require which Bun provides for native module loading
 // Node.js ESM: Use createRequire(import.meta.url)
@@ -88,6 +98,22 @@ export function loadNativeBinding(): any {
   const binaryName = `image-turbo.${targetName}.node`;
   const optionalPackageName = `imgkit-${packageSuffix}`;
 
+  const errors: string[] = [];
+
+  // Strategy 0: Check for custom native library path (env variable)
+  // Supports both NAPI-RS standard and imgkit-specific env vars
+  const customPath = process.env.IMGKIT_NATIVE_PATH || process.env.NAPI_RS_NATIVE_LIBRARY_PATH;
+  if (customPath) {
+    try {
+      if (existsSync(customPath)) {
+        return nativeRequire!(customPath);
+      }
+      errors.push(`Custom path ${customPath}: File not found`);
+    } catch (e) {
+      errors.push(`Custom path ${customPath}: ${(e as Error).message}`);
+    }
+  }
+
   // Try loading from different locations
   const possiblePaths = [
     // Same directory as this file (dist/)
@@ -96,11 +122,24 @@ export function loadNativeBinding(): any {
     join(currentDir, "..", binaryName),
     // Optional dependency package (installed in node_modules)
     join(currentDir, "..", "..", optionalPackageName, binaryName),
-    // CWD (development)
+    // CWD (development or Bun executable)
     join(process.cwd(), binaryName),
+    // Executable directory (for Bun single-file builds)
+    join(process.cwd(), "node_modules", optionalPackageName, binaryName),
   ];
 
-  const errors: string[] = [];
+  // For Bun executables, prioritize the directory containing the executable
+  // This allows users to simply place the .node file next to their compiled binary
+  // In Bun executables, process.execPath gives the real path to the binary
+  if (isBun && process.execPath && !process.execPath.includes("$bunfs")) {
+    const execDir = dirname(process.execPath);
+    // Add these at the BEGINNING for priority
+    possiblePaths.unshift(
+      join(execDir, binaryName),
+      join(execDir, "native", binaryName),
+      join(execDir, "lib", binaryName),
+    );
+  }
 
   // Strategy 1: Try requiring the optional package directly first (works best in Bun)
   // Bun's module resolution handles optional dependencies well
@@ -149,12 +188,26 @@ export function loadNativeBinding(): any {
     }
   }
 
-  throw new Error(
-    `Failed to load native binding for ${platform}-${arch}.\n` +
-      `Runtime: ${isBun ? "Bun" : "Node.js"}\n` +
-      `Tried paths: ${possiblePaths.join(", ")}\n` +
-      `Errors:\n${errors.map((e) => `  - ${e}`).join("\n")}`
-  );
+  // Build helpful error message
+  let errorMsg = `Failed to load native binding for ${platform}-${arch}.\n` +
+    `Runtime: ${isBun ? "Bun" : "Node.js"}${isBunExecutable ? " (single-file executable)" : ""}\n` +
+    `Tried paths: ${possiblePaths.join(", ")}\n` +
+    `Errors:\n${errors.map((e) => `  - ${e}`).join("\n")}`;
+
+  // Add specific guidance for Bun single-file executables
+  if (isBunExecutable) {
+    errorMsg += `\n\n` +
+      `════════════════════════════════════════════════════════════════\n` +
+      `         Bun Single-File Executable Detected                    \n` +
+      `════════════════════════════════════════════════════════════════\n\n` +
+      `Use imgkit-build to automatically handle native modules:\n\n` +
+      `  bunx imgkit-build --compile --outfile dist/app src/index.ts\n\n` +
+      `Or manually copy the native module:\n\n` +
+      `  cp node_modules/${optionalPackageName}/${binaryName} dist/\n\n` +
+      `imgkit will automatically find it next to your executable.`;
+  }
+
+  throw new Error(errorMsg);
 }
 
 // Load and export native bindings

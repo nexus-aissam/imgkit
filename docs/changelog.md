@@ -2,6 +2,24 @@
 
 All notable changes to imgkit.
 
+## [2.1.0] - 2026-01-25
+
+### Added
+
+- **Bun Single-File Executable Support** - Native module now works with `bun build --compile` (Issue #8)
+  - New `imgkit-build` CLI tool automates compilation with native module handling
+  - Usage: `bunx imgkit-build --compile --outfile dist/app src/index.ts`
+  - Automatic native module discovery from executable directory
+  - No manual configuration required
+  - See [Bun Executables Guide](/guide/bun-executable) for details
+
+- **Enhanced Loader** - Improved native module loading for Bun executables
+  - Detects Bun single-file executables via `$bunfs` filesystem
+  - Prioritizes executable directory for native module search
+  - Context-aware error messages with specific guidance
+
+---
+
 ## [2.0.2] - 2026-01-25
 
 ### Fixed

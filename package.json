@@ -1,6 +1,6 @@
 {
   "name": "imgkit",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "author": "Aissam Irhir <aissamirhir@gmail.com>",
   "repository": {
     "type": "git",
@@ -34,6 +34,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "bin": {
+    "imgkit-build": "./dist/bin/imgkit-build.js"
+  },
   "files": [
     "dist"
   ],
@@ -65,13 +68,13 @@
   ],
   "license": "MIT",
   "optionalDependencies": {
-    "imgkit-darwin-arm64": "^2.0.2",
-    "imgkit-darwin-x64": "^2.0.2",
-    "imgkit-linux-arm64-gnu": "^2.0.2",
-    "imgkit-linux-x64-gnu": "^2.0.2",
-    "imgkit-linux-x64-musl": "^2.0.2",
-    "imgkit-windows-arm64": "^2.0.2",
-    "imgkit-windows-x64": "^2.0.2"
+    "imgkit-darwin-arm64": "^2.1.0",
+    "imgkit-darwin-x64": "^2.1.0",
+    "imgkit-linux-arm64-gnu": "^2.1.0",
+    "imgkit-linux-x64-gnu": "^2.1.0",
+    "imgkit-linux-x64-musl": "^2.1.0",
+    "imgkit-windows-arm64": "^2.1.0",
+    "imgkit-windows-x64": "^2.1.0"
   },
   "napi": {
     "binaryName": "image-turbo",
@@ -89,7 +92,7 @@
   "scripts": {
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "build:ts": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build:ts": "tsup src/index.ts src/bin/imgkit-build.ts --format cjs,esm --dts --clean",
     "build:all": "bun run build && bun run build:ts",
     "artifacts": "napi artifacts",
     "version": "napi version",
