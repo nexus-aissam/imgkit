@@ -2,6 +2,20 @@
 
 All notable changes to imgkit.
 
+## [2.2.0] - 2026-02-17
+
+### Added
+
+- **Timeout & AbortSignal Support** - All async functions now accept `AsyncOptions` (Issue #9)
+  - `timeoutMs` — Rust-level timeout via tokio; rejects promise after specified duration
+  - `signal` — JavaScript AbortSignal for programmatic cancellation
+  - Works with `AbortController`, `AbortSignal.timeout()`, and custom abort reasons
+  - Both options can be combined for maximum protection
+  - Fully backward compatible
+  - See [Timeout & Cancellation API](/api/timeout) for details
+
+---
+
 ## [2.1.0] - 2026-01-25
 
 ### Added

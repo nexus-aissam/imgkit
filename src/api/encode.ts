@@ -2,26 +2,35 @@
  * Image encoding/format conversion API functions
  */
 
-import type { JpegOptions, PngOptions, WebPOptions } from "../types";
+import type { JpegOptions, PngOptions, WebPOptions, AsyncOptions } from "../types";
 import { native } from "../loader";
+import { withAbortSignal } from "../abort";
 
 /**
  * Convert image to JPEG asynchronously
  *
  * @param input - Image buffer
  * @param options - JPEG encoding options
+ * @param asyncOptions - Timeout and cancellation options
  * @returns Promise resolving to JPEG buffer
  *
  * @example
  * ```typescript
  * const jpeg = await toJpeg(imageBuffer, { quality: 85 });
+ *
+ * // With timeout
+ * const jpeg = await toJpeg(imageBuffer, { quality: 85 }, { timeoutMs: 5000 });
  * ```
  */
 export async function toJpeg(
   input: Buffer,
-  options?: JpegOptions
+  options?: JpegOptions,
+  asyncOptions?: AsyncOptions
 ): Promise<Buffer> {
-  return native.toJpeg(input, options);
+  return withAbortSignal(
+    native.toJpeg(input, options, asyncOptions?.timeoutMs),
+    asyncOptions?.signal
+  );
 }
 
 /**
@@ -36,18 +45,18 @@ export function toJpegSync(input: Buffer, options?: JpegOptions): Buffer {
  *
  * @param input - Image buffer
  * @param options - PNG encoding options
+ * @param asyncOptions - Timeout and cancellation options
  * @returns Promise resolving to PNG buffer
- *
- * @example
- * ```typescript
- * const png = await toPng(imageBuffer, { compression: 9 });
- * ```
  */
 export async function toPng(
   input: Buffer,
-  options?: PngOptions
+  options?: PngOptions,
+  asyncOptions?: AsyncOptions
 ): Promise<Buffer> {
-  return native.toPng(input, options);
+  return withAbortSignal(
+    native.toPng(input, options, asyncOptions?.timeoutMs),
+    asyncOptions?.signal
+  );
 }
 
 /**
@@ -62,22 +71,18 @@ export function toPngSync(input: Buffer, options?: PngOptions): Buffer {
  *
  * @param input - Image buffer
  * @param options - WebP encoding options
+ * @param asyncOptions - Timeout and cancellation options
  * @returns Promise resolving to WebP buffer
- *
- * @example
- * ```typescript
- * // Lossy WebP
- * const webp = await toWebp(imageBuffer, { quality: 80 });
- *
- * // Lossless WebP
- * const lossless = await toWebp(imageBuffer, { lossless: true });
- * ```
  */
 export async function toWebp(
   input: Buffer,
-  options?: WebPOptions
+  options?: WebPOptions,
+  asyncOptions?: AsyncOptions
 ): Promise<Buffer> {
-  return native.toWebp(input, options);
+  return withAbortSignal(
+    native.toWebp(input, options, asyncOptions?.timeoutMs),
+    asyncOptions?.signal
+  );
 }
 
 /**

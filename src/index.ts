@@ -60,6 +60,7 @@ export type {
   ThumbnailFormat,
   ThumbnailOptions,
   ThumbnailResult,
+  AsyncOptions,
 } from "./types";
 export type { EnhancedTensorResult } from "./api";
 

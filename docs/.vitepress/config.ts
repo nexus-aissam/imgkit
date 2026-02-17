@@ -59,7 +59,7 @@ export default defineConfig({
       { text: "API", link: "/api/", activeMatch: "/api/" },
       { text: "Examples", link: "/examples/", activeMatch: "/examples/" },
       {
-        text: "v2.1.0",
+        text: "v2.2.0",
         items: [
           { text: "Changelog", link: "/changelog" },
           {
@@ -134,6 +134,7 @@ export default defineConfig({
             { text: "dominantColors", link: "/api/dominant-colors" },
             { text: "thumbnail", link: "/api/thumbnail" },
             { text: "EXIF Metadata", link: "/api/exif" },
+            { text: "Timeout & Cancellation", link: "/api/timeout" },
           ],
         },
         {

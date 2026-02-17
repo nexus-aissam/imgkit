@@ -2,15 +2,17 @@
  * Resize API functions
  */
 
-import type { ResizeOptions } from "../types";
+import type { ResizeOptions, AsyncOptions } from "../types";
 import { native } from "../loader";
 import { toNapiResizeOptions } from "../converters";
+import { withAbortSignal } from "../abort";
 
 /**
  * Resize image asynchronously
  *
  * @param input - Image buffer
  * @param options - Resize options
+ * @param asyncOptions - Timeout and cancellation options
  * @returns Promise resolving to resized image buffer (PNG)
  *
  * @example
@@ -18,22 +20,19 @@ import { toNapiResizeOptions } from "../converters";
  * // Resize to specific dimensions
  * const resized = await resize(imageBuffer, { width: 800, height: 600 });
  *
- * // Resize maintaining aspect ratio
- * const thumb = await resize(imageBuffer, { width: 200 });
- *
- * // High-quality resize
- * const hq = await resize(imageBuffer, {
- *   width: 1920,
- *   filter: 'lanczos3',
- *   fit: 'contain'
- * });
+ * // With timeout
+ * const resized = await resize(imageBuffer, { width: 800 }, { timeoutMs: 5000 });
  * ```
  */
 export async function resize(
   input: Buffer,
-  options: ResizeOptions
+  options: ResizeOptions,
+  asyncOptions?: AsyncOptions
 ): Promise<Buffer> {
-  return native.resize(input, toNapiResizeOptions(options));
+  return withAbortSignal(
+    native.resize(input, toNapiResizeOptions(options), asyncOptions?.timeoutMs),
+    asyncOptions?.signal
+  );
 }
 
 /**

@@ -4,6 +4,38 @@
 
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
+use tokio::time::{timeout, Duration};
+
+/// Run a blocking task with an optional timeout.
+/// If timeout_ms is Some and > 0, the task will be cancelled after the specified duration.
+/// Note: The Rust thread continues running in the background after timeout (spawn_blocking limitation).
+async fn with_optional_timeout<T, F>(
+    timeout_ms: Option<u32>,
+    task: F,
+) -> Result<T>
+where
+    F: FnOnce() -> std::result::Result<T, ImageError> + Send + 'static,
+    T: Send + 'static,
+{
+    let handle = tokio::task::spawn_blocking(task);
+    match timeout_ms {
+        Some(ms) if ms > 0 => {
+            match timeout(Duration::from_millis(ms as u64), handle).await {
+                Ok(join_result) => join_result
+                    .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+                    .map_err(|e| e.into()),
+                Err(_) => Err(Error::from_reason(format!(
+                    "Operation timed out after {}ms",
+                    ms
+                ))),
+            }
+        }
+        _ => handle
+            .await
+            .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
+            .map_err(|e| e.into()),
+    }
+}
 
 // Internal modules
 mod crop;
@@ -230,98 +262,76 @@ pub fn thumbhash_to_rgba_sync(hash: Buffer) -> Result<ThumbHashDecodeResult> {
 
 /// Get image metadata asynchronously
 #[napi]
-pub async fn metadata(input: Buffer) -> Result<ImageMetadata> {
-  tokio::task::spawn_blocking(move || {
+pub async fn metadata(input: Buffer, timeout_ms: Option<u32>) -> Result<ImageMetadata> {
+  with_optional_timeout(timeout_ms, move || {
     decode::get_metadata(&input)
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Resize image asynchronously - uses scale-on-decode for JPEG optimization
 #[napi]
-pub async fn resize(input: Buffer, options: ResizeOptions) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
-    // Use scale-on-decode for JPEG images - massive speedup for large images
+pub async fn resize(input: Buffer, options: ResizeOptions, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image_with_target(&input, options.width, options.height)?;
     let resized = resize::resize_image(img, &options)?;
     let output = encode::encode_png(&resized, None)?;
     Ok::<Buffer, ImageError>(Buffer::from(output))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Crop image asynchronously - zero-copy operation
 #[napi]
-pub async fn crop(input: Buffer, options: CropOptions) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+pub async fn crop(input: Buffer, options: CropOptions, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image(&input)?;
     let cropped = crop::crop_image(img, &options)?;
     let output = encode::encode_png(&cropped, None)?;
     Ok::<Buffer, ImageError>(Buffer::from(output))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Convert image to JPEG asynchronously
 #[napi]
-pub async fn to_jpeg(input: Buffer, options: Option<JpegOptions>) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+pub async fn to_jpeg(input: Buffer, options: Option<JpegOptions>, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image(&input)?;
     let output = encode::encode_jpeg(&img, options.as_ref())?;
     Ok::<Buffer, ImageError>(Buffer::from(output))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Convert image to PNG asynchronously
 #[napi]
-pub async fn to_png(input: Buffer, options: Option<PngOptions>) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+pub async fn to_png(input: Buffer, options: Option<PngOptions>, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image(&input)?;
     let output = encode::encode_png(&img, options.as_ref())?;
     Ok::<Buffer, ImageError>(Buffer::from(output))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Convert image to WebP asynchronously
 #[napi]
-pub async fn to_webp(input: Buffer, options: Option<WebPOptions>) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+pub async fn to_webp(input: Buffer, options: Option<WebPOptions>, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image(&input)?;
     let output = encode::encode_webp(&img, options.as_ref())?;
     Ok::<Buffer, ImageError>(Buffer::from(output))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Transform image with multiple operations asynchronously
 #[napi]
-pub async fn transform(input: Buffer, options: TransformOptions) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+pub async fn transform(input: Buffer, options: TransformOptions, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     transform::transform_image(&input, &options)
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Generate blurhash from image asynchronously
 #[napi]
-pub async fn blurhash(input: Buffer, components_x: Option<u32>, components_y: Option<u32>) -> Result<BlurHashResult> {
-  tokio::task::spawn_blocking(move || {
+pub async fn blurhash(input: Buffer, components_x: Option<u32>, components_y: Option<u32>, timeout_ms: Option<u32>) -> Result<BlurHashResult> {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image(&input)?;
     let cx = components_x.unwrap_or(4) as u32;
     let cy = components_y.unwrap_or(3) as u32;
@@ -337,10 +347,7 @@ pub async fn blurhash(input: Buffer, components_x: Option<u32>, components_y: Op
       width: w,
       height: h,
     })
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Generate thumbhash from image asynchronously
@@ -348,15 +355,13 @@ pub async fn blurhash(input: Buffer, components_x: Option<u32>, components_y: Op
 /// Note: Images are automatically resized to max 100x100 as required by ThumbHash algorithm
 /// OPTIMIZED: Uses shrink-on-load to decode directly at reduced resolution (3x faster)
 #[napi]
-pub async fn thumbhash(input: Buffer) -> Result<ThumbHashResult> {
-  tokio::task::spawn_blocking(move || {
-    // First get original dimensions from metadata (fast header-only read)
+pub async fn thumbhash(input: Buffer, timeout_ms: Option<u32>) -> Result<ThumbHashResult> {
+  with_optional_timeout(timeout_ms, move || {
     let meta = decode::get_metadata(&input)?;
     let orig_w = meta.width;
     let orig_h = meta.height;
     let has_alpha = meta.has_alpha;
 
-    // Calculate target size for ThumbHash (max 100x100, preserve aspect ratio)
     let (thumb_w, thumb_h) = if orig_w > 100 || orig_h > 100 {
       let scale = 100.0 / (orig_w.max(orig_h) as f32);
       (
@@ -367,8 +372,6 @@ pub async fn thumbhash(input: Buffer) -> Result<ThumbHashResult> {
       (orig_w, orig_h)
     };
 
-    // OPTIMIZATION: Use shrink-on-load to decode at target size
-    // This is 3x faster than decode-then-resize for large images
     let img = decode::decode_image_with_target(&input, Some(thumb_w), Some(thumb_h))?;
     let (actual_w, actual_h) = image::GenericImageView::dimensions(&img);
 
@@ -381,16 +384,13 @@ pub async fn thumbhash(input: Buffer) -> Result<ThumbHashResult> {
       height: orig_h,
       has_alpha,
     })
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Decode thumbhash back to RGBA pixels asynchronously
 #[napi]
-pub async fn thumbhash_to_rgba(hash: Buffer) -> Result<ThumbHashDecodeResult> {
-  tokio::task::spawn_blocking(move || {
+pub async fn thumbhash_to_rgba(hash: Buffer, timeout_ms: Option<u32>) -> Result<ThumbHashDecodeResult> {
+  with_optional_timeout(timeout_ms, move || {
     let (w, h, rgba) = thumbhash::thumb_hash_to_rgba(&hash)
       .map_err(|_| ImageError::ProcessingError("Invalid thumbhash data".to_string()))?;
 
@@ -399,10 +399,7 @@ pub async fn thumbhash_to_rgba(hash: Buffer) -> Result<ThumbHashDecodeResult> {
       width: w as u32,
       height: h as u32,
     })
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 // ============================================
@@ -416,8 +413,9 @@ pub async fn image_hash(
   input: Buffer,
   algorithm: Option<HashAlgorithm>,
   size: Option<HashSize>,
+  timeout_ms: Option<u32>,
 ) -> Result<ImageHashResult> {
-  tokio::task::spawn_blocking(move || {
+  with_optional_timeout(timeout_ms, move || {
     use image_hasher::{HasherConfig, HashAlg};
 
     let img = decode::decode_image(&input)?;
@@ -458,18 +456,15 @@ pub async fn image_hash(
       hash_size,
       algorithm: alg_name.to_string(),
     })
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Calculate hamming distance between two perceptual hashes asynchronously
 /// Returns 0 for identical images, higher values for more different images
 /// Typical thresholds: <5 = very similar, <10 = similar, >10 = different
 #[napi]
-pub async fn image_hash_distance(hash1: String, hash2: String) -> Result<u32> {
-  tokio::task::spawn_blocking(move || {
+pub async fn image_hash_distance(hash1: String, hash2: String, timeout_ms: Option<u32>) -> Result<u32> {
+  with_optional_timeout(timeout_ms, move || {
     use image_hasher::ImageHash;
 
     let h1: ImageHash<Vec<u8>> = ImageHash::from_base64(&hash1)
@@ -478,10 +473,7 @@ pub async fn image_hash_distance(hash1: String, hash2: String) -> Result<u32> {
       .map_err(|e| ImageError::ProcessingError(format!("Invalid hash2: {:?}", e)))?;
 
     Ok::<u32, ImageError>(h1.dist(&h2))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Get library version
@@ -563,12 +555,12 @@ pub fn smart_crop_analyze_sync(
 pub async fn smart_crop_analyze(
   input: Buffer,
   options: SmartCropOptions,
+  timeout_ms: Option<u32>,
 ) -> Result<SmartCropAnalysis> {
-  tokio::task::spawn_blocking(move || {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image(&input)?;
     let (img_w, img_h) = image::GenericImageView::dimensions(&img);
 
-    // Determine target dimensions
     let (target_w, target_h) = if let Some(ref ratio) = options.aspect_ratio {
       let (ratio_w, ratio_h) = parse_aspect_ratio(ratio)
         .map_err(|e| ImageError::ProcessingError(e))?;
@@ -599,10 +591,7 @@ pub async fn smart_crop_analyze(
       height: result.crop.height,
       score: result.score.total,
     })
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Smart crop an image using content-aware detection synchronously
@@ -658,12 +647,12 @@ pub fn smart_crop_sync(
 pub async fn smart_crop(
   input: Buffer,
   options: SmartCropOptions,
+  timeout_ms: Option<u32>,
 ) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image(&input)?;
     let (img_w, img_h) = image::GenericImageView::dimensions(&img);
 
-    // Determine target dimensions
     let (target_w, target_h) = if let Some(ref ratio) = options.aspect_ratio {
       let (ratio_w, ratio_h) = parse_aspect_ratio(ratio)
         .map_err(|e| ImageError::ProcessingError(e))?;
@@ -687,7 +676,6 @@ pub async fn smart_crop(
       std::num::NonZeroU32::new(target_h).ok_or_else(|| ImageError::ProcessingError("Target height must be > 0".to_string()))?,
     ).map_err(|e| ImageError::ProcessingError(format!("Smart crop analysis failed: {:?}", e)))?;
 
-    // Apply the crop
     let cropped = img.crop_imm(
       result.crop.x,
       result.crop.y,
@@ -695,13 +683,9 @@ pub async fn smart_crop(
       result.crop.height,
     );
 
-    // Encode to PNG
     let output = encode::encode_png(&cropped, None)?;
     Ok::<Buffer, ImageError>(Buffer::from(output))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 // ============================================
@@ -771,18 +755,15 @@ pub fn dominant_colors_sync(
 pub async fn dominant_colors(
   input: Buffer,
   count: Option<u32>,
+  timeout_ms: Option<u32>,
 ) -> Result<DominantColorsResult> {
-  tokio::task::spawn_blocking(move || {
+  with_optional_timeout(timeout_ms, move || {
     let img = decode::decode_image(&input)?;
     let rgb_img = img.to_rgb8();
 
-    // Get raw RGB bytes
     let pixels = rgb_img.as_raw();
-
-    // Extract colors using dominant_color crate
     let color_bytes = dominant_color::get_colors(pixels, false);
 
-    // Convert to DominantColor structs (3 bytes per color: R, G, B)
     let max_colors = count.unwrap_or(5) as usize;
     let mut colors: Vec<DominantColor> = Vec::new();
 
@@ -803,7 +784,6 @@ pub async fn dominant_colors(
       }
     }
 
-    // If no colors found, return black as fallback
     if colors.is_empty() {
       colors.push(DominantColor {
         r: 0,
@@ -816,10 +796,7 @@ pub async fn dominant_colors(
     let primary = colors[0].clone();
 
     Ok::<DominantColorsResult, ImageError>(DominantColorsResult { colors, primary })
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 // ============================================
@@ -844,8 +821,8 @@ pub fn to_tensor_sync(input: Buffer, options: Option<TensorOptions>) -> Result<T
 /// Convert image to tensor format asynchronously
 /// Optimized for ML preprocessing with SIMD and parallel processing
 #[napi]
-pub async fn to_tensor(input: Buffer, options: Option<TensorOptions>) -> Result<TensorResult> {
-  tokio::task::spawn_blocking(move || {
+pub async fn to_tensor(input: Buffer, options: Option<TensorOptions>, timeout_ms: Option<u32>) -> Result<TensorResult> {
+  with_optional_timeout(timeout_ms, move || {
     let opts = options.unwrap_or(TensorOptions {
       dtype: None,
       layout: None,
@@ -855,10 +832,7 @@ pub async fn to_tensor(input: Buffer, options: Option<TensorOptions>) -> Result<
       batch: None,
     });
     tensor::image_to_tensor(&input, &opts)
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 // ============================================
@@ -898,8 +872,8 @@ pub fn write_exif_sync(input: Buffer, options: ExifOptions) -> Result<Buffer> {
 
 /// Write EXIF metadata to a WebP image asynchronously
 #[napi]
-pub async fn write_exif(input: Buffer, options: ExifOptions) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+pub async fn write_exif(input: Buffer, options: ExifOptions, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     let format = decode::detect_format(&input)?;
     let internal_opts = exif_options_to_internal(&options);
 
@@ -910,10 +884,7 @@ pub async fn write_exif(input: Buffer, options: ExifOptions) -> Result<Buffer> {
     };
 
     Ok::<Buffer, ImageError>(Buffer::from(output))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Strip EXIF metadata from an image synchronously
@@ -932,8 +903,8 @@ pub fn strip_exif_sync(input: Buffer) -> Result<Buffer> {
 
 /// Strip EXIF metadata from an image asynchronously
 #[napi]
-pub async fn strip_exif(input: Buffer) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+pub async fn strip_exif(input: Buffer, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     let format = decode::detect_format(&input)?;
 
     let output = match format {
@@ -943,10 +914,7 @@ pub async fn strip_exif(input: Buffer) -> Result<Buffer> {
     };
 
     Ok::<Buffer, ImageError>(Buffer::from(output))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 // ============================================
@@ -1101,13 +1069,10 @@ pub fn thumbnail_sync(input: Buffer, options: ThumbnailOptions) -> Result<Thumbn
 /// // - With shrink-on-load: ~2ms (7.5x faster)
 /// ```
 #[napi]
-pub async fn thumbnail(input: Buffer, options: ThumbnailOptions) -> Result<ThumbnailResult> {
-  tokio::task::spawn_blocking(move || {
+pub async fn thumbnail(input: Buffer, options: ThumbnailOptions, timeout_ms: Option<u32>) -> Result<ThumbnailResult> {
+  with_optional_timeout(timeout_ms, move || {
     generate_thumbnail_internal(&input, &options)
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }
 
 /// Generate a fast thumbnail and return just the buffer (simpler API)
@@ -1121,12 +1086,9 @@ pub fn thumbnail_buffer_sync(input: Buffer, options: ThumbnailOptions) -> Result
 /// Generate a fast thumbnail and return just the buffer asynchronously
 /// Same optimizations as thumbnail() but returns only the image data
 #[napi]
-pub async fn thumbnail_buffer(input: Buffer, options: ThumbnailOptions) -> Result<Buffer> {
-  tokio::task::spawn_blocking(move || {
+pub async fn thumbnail_buffer(input: Buffer, options: ThumbnailOptions, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
     generate_thumbnail_internal(&input, &options)
       .map(|r| Buffer::from(r.data))
-  })
-  .await
-  .map_err(|e| Error::from_reason(format!("Task error: {}", e)))?
-  .map_err(|e| e.into())
+  }).await
 }

@@ -547,3 +547,15 @@ export interface NapiThumbnailOptions {
   filter?: string;
   fastMode?: boolean;
 }
+
+// ============================================
+// ASYNC OPTIONS (TIMEOUT & ABORT)
+// ============================================
+
+/** Options for async operations (timeout and cancellation) */
+export interface AsyncOptions {
+  /** Timeout in milliseconds. Operation rejects after this duration. */
+  timeoutMs?: number;
+  /** AbortSignal for cancellation. Operation rejects when signal is aborted. */
+  signal?: AbortSignal;
+}

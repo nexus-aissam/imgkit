@@ -2,18 +2,17 @@
  * Transform API functions
  */
 
-import type { TransformOptions } from "../types";
+import type { TransformOptions, AsyncOptions } from "../types";
 import { native } from "../loader";
 import { toNapiTransformOptions } from "../converters";
+import { withAbortSignal } from "../abort";
 
 /**
  * Transform image with multiple operations asynchronously
  *
- * This is the most efficient way to apply multiple transformations
- * as it processes the image only once.
- *
  * @param input - Image buffer
  * @param options - Transform options
+ * @param asyncOptions - Timeout and cancellation options
  * @returns Promise resolving to transformed image buffer
  *
  * @example
@@ -23,14 +22,18 @@ import { toNapiTransformOptions } from "../converters";
  *   rotate: 90,
  *   grayscale: true,
  *   output: { format: 'webp', webp: { quality: 85 } }
- * });
+ * }, { timeoutMs: 10000 });
  * ```
  */
 export async function transform(
   input: Buffer,
-  options: TransformOptions
+  options: TransformOptions,
+  asyncOptions?: AsyncOptions
 ): Promise<Buffer> {
-  return native.transform(input, toNapiTransformOptions(options));
+  return withAbortSignal(
+    native.transform(input, toNapiTransformOptions(options), asyncOptions?.timeoutMs),
+    asyncOptions?.signal
+  );
 }
 
 /**
