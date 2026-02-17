@@ -161,7 +161,7 @@ jobs:
           BUILD_SCRIPT: ${{ matrix.settings.build }}
         run: |
           echo "$BUILD_SCRIPT" > /tmp/docker-build.sh
-          docker run --rm --user 0:0 \
+          docker run --rm --user 0:0 --entrypoint /bin/sh \
             -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db \
             -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache \
             -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index \
@@ -169,7 +169,7 @@ jobs:
             -v /tmp/docker-build.sh:/tmp/docker-build.sh:ro \
             -w /build \
             ${{ matrix.settings.docker }} \
-            bash /tmp/docker-build.sh
+            /tmp/docker-build.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
