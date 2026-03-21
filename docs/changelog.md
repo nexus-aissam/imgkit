@@ -2,6 +2,19 @@
 
 All notable changes to imgkit.
 
+## [2.2.1] - 2026-03-21
+
+### Fixed
+
+- **Native binding fails to load on macOS arm64** - Missing `libheif.1.dylib` (Issue #10)
+  - Switched from dynamic linking to static linking for libheif via `embedded-libheif`
+  - All HEIC/HEIF codec dependencies are now compiled from source and statically linked
+  - No system-installed libheif or Homebrew dependencies required
+  - Eliminates dylib version mismatches (e.g. `libheif.1.dylib` vs `libheif.19.dylib`)
+  - See [Issue #10](https://github.com/nexus-aissam/imgkit/issues/10) for details
+
+---
+
 ## [2.2.0] - 2026-02-17
 
 ### Added

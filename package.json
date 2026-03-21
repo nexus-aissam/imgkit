@@ -1,6 +1,6 @@
 {
   "name": "imgkit",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "author": "Aissam Irhir <aissamirhir@gmail.com>",
   "repository": {
     "type": "git",
@@ -68,13 +68,13 @@
   ],
   "license": "MIT",
   "optionalDependencies": {
-    "imgkit-darwin-arm64": "^2.2.0",
-    "imgkit-darwin-x64": "^2.2.0",
-    "imgkit-linux-arm64-gnu": "^2.2.0",
-    "imgkit-linux-x64-gnu": "^2.2.0",
-    "imgkit-linux-x64-musl": "^2.2.0",
-    "imgkit-windows-arm64": "^2.2.0",
-    "imgkit-windows-x64": "^2.2.0"
+    "imgkit-darwin-arm64": "^2.2.1",
+    "imgkit-darwin-x64": "^2.2.1",
+    "imgkit-linux-arm64-gnu": "^2.2.1",
+    "imgkit-linux-x64-gnu": "^2.2.1",
+    "imgkit-linux-x64-musl": "^2.2.1",
+    "imgkit-windows-arm64": "^2.2.1",
+    "imgkit-windows-x64": "^2.2.1"
   },
   "napi": {
     "binaryName": "image-turbo",

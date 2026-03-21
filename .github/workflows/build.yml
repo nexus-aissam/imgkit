@@ -33,7 +33,7 @@ jobs:
               ./node_modules/.bin/napi build --platform --release --target x86_64-apple-darwin
               strip -x *.node
 
-          # macOS ARM64 (with HEIC support - native build, requires nightly for moxcms)
+          # macOS ARM64 (with HEIC support - statically linked via embedded-libheif)
           - host: macos-latest
             target: aarch64-apple-darwin
             rust: nightly
@@ -44,6 +44,16 @@ jobs:
               export CMAKE_ASM_NASM_COMPILER="$NASM_PATH/nasm"
               echo "NASM at: $(which nasm)"
               nasm --version
+              # Create stub pkg-config files for codec dependencies.
+              # embedded-libheif compiles all codecs as built-in static libraries,
+              # but its generated .pc file lists them in Requires.private. Without
+              # stubs, system-deps would find system versions whose .pc files may
+              # include -lstdc++ (from libde265), which doesn't exist on macOS.
+              STUB_PC_DIR=$(mktemp -d)
+              for pkg in libde265 x265 aom dav1d SvtAv1Enc libjpeg libopenjp2 libsharpyuv; do
+                printf "Name: %s\nDescription: stub\nVersion: 99.0.0\nLibs:\nCflags:\n" "$pkg" > "$STUB_PC_DIR/$pkg.pc"
+              done
+              export PKG_CONFIG_PATH="$STUB_PC_DIR:${PKG_CONFIG_PATH:-}"
               ./node_modules/.bin/napi build --platform --release --target aarch64-apple-darwin --features heic
               strip -x *.node
 
@@ -115,11 +125,11 @@ jobs:
         with:
           node-version: 20
 
-      # Install build dependencies for turbojpeg and libheif
+      # Install build dependencies for turbojpeg (libheif is statically linked via embedded-libheif)
       - name: Install build tools (macOS)
         if: ${{ runner.os == 'macOS' }}
         run: |
-          brew install nasm cmake libheif pkg-config
+          brew install nasm cmake pkg-config
           # Add nasm to PATH for cmake to find it
           NASM_PATH=$(brew --prefix nasm)/bin
           echo "$NASM_PATH" >> $GITHUB_PATH

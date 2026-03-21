@@ -1,6 +1,6 @@
 [package]
 name = "image-turbo"
-version = "2.2.0"
+version = "2.2.1"
 edition = "2021"
 license = "MIT"
 authors = ["Aissam Irhir <aissamirhir@gmail.com>"]
@@ -61,10 +61,10 @@ dominant_color = "0.4"
 # For EXIF/metadata writing (WebP, JPEG, PNG)
 img-parts = "0.3"
 
-# HEIC/HEIF support via libheif (uses system-installed libheif)
-# Only enabled on macOS (Homebrew has latest libheif 1.20+)
-# Linux distros have older libheif versions, so disabled there
-libheif-rs = { version = "2.5", default-features = false, features = ["v1_17"], optional = true }
+# HEIC/HEIF support via libheif
+# Uses embedded-libheif to statically link libheif (no system dependency needed)
+# This avoids dylib version mismatches (e.g. libheif.1.dylib vs libheif.19.dylib)
+libheif-rs = { version = "2.5", default-features = false, features = ["v1_17", "embedded-libheif"], optional = true }
 
 [features]
 default = []

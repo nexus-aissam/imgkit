@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-03-21
+
+### Fixed
+
+- **Native binding fails to load on macOS arm64** - Missing `libheif.1.dylib` (Issue #10)
+  - Switched from dynamic linking to static linking for libheif via `embedded-libheif`
+  - All HEIC/HEIF codec dependencies (libde265, x265, aom, dav1d, etc.) are now compiled from source and statically linked into the native binary
+  - The `.node` binary no longer requires system-installed libheif or any Homebrew dependencies
+  - Eliminates dylib version mismatches (e.g. `libheif.1.dylib` vs `libheif.19.dylib`)
+  - Removed `brew install libheif` from CI build — no longer needed
+
+---
+
 ## [2.2.0] - 2026-02-17
 
 ### Added
