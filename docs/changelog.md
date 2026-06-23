@@ -2,6 +2,21 @@
 
 All notable changes to imgkit.
 
+## [2.3.0] - 2026-06-23
+
+### Added
+
+- **Composite / Overlay / Watermark** — New `composite()` / `compositeSync()` API for painting one or more layers onto a base image
+  - **Placement** — gravity (`center`, `southEast`, …) with `offsetX`/`offsetY`, or absolute `left`/`top` coordinates (off-canvas/negative positions are clipped)
+  - **Blend modes** — `over` (default), `multiply`, `screen`, `overlay`, `darken`, `lighten`, `add`
+  - **Per-layer `opacity`** (0.0–1.0) and per-layer **`resize`** (scale a logo before compositing)
+  - **`tile`** — repeat a layer across the whole base for watermark patterns
+  - **Multiple layers** painted in order; output defaults to PNG (or set `output` for JPEG/PNG/WebP)
+  - Full async support with `timeoutMs` / `AbortSignal`
+  - See the [Composite API](/api/composite) and [Composite & Watermark example](/examples/composite)
+
+---
+
 ## [2.2.1] - 2026-03-21
 
 ### Fixed

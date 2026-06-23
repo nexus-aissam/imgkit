@@ -38,6 +38,7 @@ where
 }
 
 // Internal modules
+mod composite;
 mod crop;
 mod decode;
 mod encode;
@@ -1090,5 +1091,38 @@ pub async fn thumbnail_buffer(input: Buffer, options: ThumbnailOptions, timeout_
   with_optional_timeout(timeout_ms, move || {
     generate_thumbnail_internal(&input, &options)
       .map(|r| Buffer::from(r.data))
+  }).await
+}
+
+// ============================================
+// COMPOSITE / OVERLAY / WATERMARK FUNCTIONS
+// ============================================
+
+/// Composite one or more layers onto a base image synchronously.
+///
+/// Supports alpha compositing with W3C blend modes (over, multiply, screen,
+/// overlay, darken, lighten, add), gravity- or coordinate-based placement,
+/// per-layer opacity, optional per-layer resize, and tiled watermark patterns.
+///
+/// Example:
+/// ```javascript
+/// const out = compositeSync(baseBuffer, {
+///   layers: [{ input: logoBuffer, gravity: "SouthEast", opacity: 0.7 }],
+/// });
+/// ```
+#[napi]
+pub fn composite_sync(base: Buffer, options: CompositeOptions) -> Result<Buffer> {
+  let output = composite::composite_image(&base, &options)?;
+  Ok(Buffer::from(output))
+}
+
+/// Composite one or more layers onto a base image asynchronously.
+///
+/// See `composite_sync` for details. Supports the timeout/AbortSignal pattern.
+#[napi]
+pub async fn composite(base: Buffer, options: CompositeOptions, timeout_ms: Option<u32>) -> Result<Buffer> {
+  with_optional_timeout(timeout_ms, move || {
+    composite::composite_image(&base, &options)
+      .map(Buffer::from)
   }).await
 }

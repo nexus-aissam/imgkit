@@ -12,13 +12,13 @@
         "typescript": "^5.9.0",
       },
       "optionalDependencies": {
-        "imgkit-darwin-arm64": "^2.0.0",
-        "imgkit-darwin-x64": "^2.0.0",
-        "imgkit-linux-arm64-gnu": "^2.0.0",
-        "imgkit-linux-x64-gnu": "^2.0.0",
-        "imgkit-linux-x64-musl": "^2.0.0",
-        "imgkit-win32-arm64-msvc": "^2.0.0",
-        "imgkit-win32-x64-msvc": "^2.0.0",
+        "imgkit-darwin-arm64": "^2.3.0",
+        "imgkit-darwin-x64": "^2.3.0",
+        "imgkit-linux-arm64-gnu": "^2.3.0",
+        "imgkit-linux-x64-gnu": "^2.3.0",
+        "imgkit-linux-x64-musl": "^2.3.0",
+        "imgkit-windows-arm64": "^2.3.0",
+        "imgkit-windows-x64": "^2.3.0",
       },
     },
   },
@@ -408,16 +408,6 @@
     "get-east-asian-width": ["get-east-asian-width@1.4.0", "", {}, "sha512-QZjmEOC+IT1uk6Rx0sX22V6uHWVwbdbxf1faPqJ1QhLdGgsRGCZoyaQBm/piRdJy/D2um6hM1UP7ZEeQ4EkP+Q=="],
 
     "iconv-lite": ["iconv-lite@0.7.2", "", { "dependencies": { "safer-buffer": ">= 2.1.2 < 3.0.0" } }, "sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw=="],
-
-    "imgkit-darwin-arm64": ["imgkit-darwin-arm64@2.0.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-JfwwmitdctDmXSZOZY8jWfW3DhU+vDU+hi2w0bVQDUtWMIF0H0WFVMLDnUzpPWCDz862Jw3MEuMv9kQmokvIvA=="],
-
-    "imgkit-darwin-x64": ["imgkit-darwin-x64@2.0.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-1jzeX4KS9bwD+5cyhc9QxVhmty/XymuFYJeyH4Q7FTEgPSe4EbCMbkzFvDazZMlRugmdUpFjC498AmADtaxPHg=="],
-
-    "imgkit-linux-arm64-gnu": ["imgkit-linux-arm64-gnu@2.0.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-CYuJsRE9ZkeSHaeRboLx6+D7hJYjindbSpct6E42f1hL6sB0EoG3WF2bZJ2hjef1lJMaGdvCeCsqCcitfegS9A=="],
-
-    "imgkit-linux-x64-gnu": ["imgkit-linux-x64-gnu@2.0.0", "", { "os": "linux", "cpu": "x64" }, "sha512-AoRnX09K/R8FRD9nXdqRv+U4ilwwB8cZm42t1IgjrTUYH7wfQzHKB/qsJMd6a1+odVAIziwKcs/yMACE+Zop6w=="],
-
-    "imgkit-linux-x64-musl": ["imgkit-linux-x64-musl@2.0.0", "", { "os": "linux", "cpu": "x64" }, "sha512-S2eZSZXDav6wmmThHGkqVvtgIo4WKjFCwgNmj54+V5MqRkG4g+N1R64dZjytVtRG1ypPOluDVxnnHxps7AiGTQ=="],
 
     "joycon": ["joycon@3.1.1", "", {}, "sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw=="],
 

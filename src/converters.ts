@@ -5,12 +5,14 @@
  */
 
 import type {
+  CompositeOptions,
   CropOptions,
-  ResizeOptions,
-  TransformOptions,
+  NapiCompositeOptions,
   NapiCropOptions,
   NapiResizeOptions,
   NapiTransformOptions,
+  ResizeOptions,
+  TransformOptions,
 } from "./types";
 
 /**
@@ -123,4 +125,43 @@ export function toNapiTransformOptions(
   }
 
   return result;
+}
+
+/**
+ * Convert blend mode to napi format (PascalCase Rust enum)
+ */
+export function toNapiBlend(blend?: string): string | undefined {
+  if (!blend) return undefined;
+  return blend.charAt(0).toUpperCase() + blend.slice(1);
+}
+
+/**
+ * Convert composite options to napi format
+ */
+export function toNapiCompositeOptions(
+  options: CompositeOptions
+): NapiCompositeOptions {
+  return {
+    layers: options.layers.map((layer) => ({
+      input: layer.input,
+      gravity: toNapiGravity(layer.gravity),
+      left: layer.left,
+      top: layer.top,
+      offsetX: layer.offsetX,
+      offsetY: layer.offsetY,
+      opacity: layer.opacity,
+      blend: toNapiBlend(layer.blend),
+      tile: layer.tile,
+      resize: layer.resize ? toNapiResizeOptions(layer.resize) : undefined,
+    })),
+    output: options.output
+      ? {
+          format: toNapiFormat(options.output.format),
+          jpeg: options.output.jpeg,
+          png: options.output.png,
+          webp: options.output.webp,
+          avif: options.output.avif,
+        }
+      : undefined,
+  };
 }

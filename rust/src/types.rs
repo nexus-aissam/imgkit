@@ -2,6 +2,7 @@
 //!
 //! All NAPI-compatible types (enums, structs) for the public API.
 
+use napi::bindgen_prelude::Buffer;
 use napi_derive::napi;
 
 /// Image format enum
@@ -256,6 +257,65 @@ pub struct TransformOptions {
   pub contrast: Option<i32>,
   /// EXIF metadata to write (for JPEG/WebP output)
   pub exif: Option<ExifOptions>,
+}
+
+// ============================================
+// COMPOSITE / OVERLAY TYPES
+// ============================================
+
+/// Blend mode for compositing a layer onto the base image.
+/// Follows the W3C Compositing and Blending Level 1 separable blend modes.
+#[derive(Clone)]
+#[napi(string_enum)]
+pub enum BlendMode {
+  /// Normal alpha "source-over" compositing (default)
+  Over,
+  /// Multiply backdrop and source (darkens)
+  Multiply,
+  /// Screen backdrop and source (lightens)
+  Screen,
+  /// Overlay (multiply or screen depending on backdrop)
+  Overlay,
+  /// Keep the darker of backdrop and source
+  Darken,
+  /// Keep the lighter of backdrop and source
+  Lighten,
+  /// Additive blending (clamped)
+  Add,
+}
+
+/// A single layer to composite onto the base image.
+#[napi(object)]
+pub struct CompositeLayer {
+  /// Encoded image bytes for this layer (JPEG, PNG, WebP, etc.)
+  pub input: Buffer,
+  /// Anchor point used when `left`/`top` are not provided (default: Center)
+  pub gravity: Option<CropGravity>,
+  /// Absolute X position of the layer's top-left corner (overrides gravity)
+  pub left: Option<i32>,
+  /// Absolute Y position of the layer's top-left corner (overrides gravity)
+  pub top: Option<i32>,
+  /// Horizontal offset applied after gravity placement (or tile phase)
+  pub offset_x: Option<i32>,
+  /// Vertical offset applied after gravity placement (or tile phase)
+  pub offset_y: Option<i32>,
+  /// Layer opacity 0.0-1.0, multiplied into the layer's alpha (default: 1.0)
+  pub opacity: Option<f64>,
+  /// Blend mode (default: Over)
+  pub blend: Option<BlendMode>,
+  /// Repeat the layer across the whole base image (watermark pattern, default: false)
+  pub tile: Option<bool>,
+  /// Optional resize applied to the layer before compositing
+  pub resize: Option<ResizeOptions>,
+}
+
+/// Options for compositing one or more layers onto a base image.
+#[napi(object)]
+pub struct CompositeOptions {
+  /// Layers to composite, painted in array order (first = bottom-most overlay)
+  pub layers: Vec<CompositeLayer>,
+  /// Output format options (default: PNG to preserve alpha)
+  pub output: Option<OutputOptions>,
 }
 
 // ============================================

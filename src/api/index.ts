@@ -42,3 +42,4 @@ export {
   thumbnailBuffer,
   thumbnailBufferSync,
 } from "./thumbnail";
+export { composite, compositeSync } from "./composite";

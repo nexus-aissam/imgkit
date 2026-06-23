@@ -37,6 +37,7 @@
 - **Fast Thumbnails** (shrink-on-load)
 - **Native HEIC/HEIF** support
 - **Smart Crop** (content-aware)
+- **Composite / Watermark** (blend modes)
 - **Dominant Colors** (UI theming)
 - **ThumbHash & BlurHash** placeholders
 - **Perceptual Hashing** (pHash/dHash)
@@ -60,13 +61,17 @@ pnpm add imgkit      # pnpm
 ## Quick Start
 
 ```typescript
-import { resize, metadata, smartCrop, transform, thumbhash, toTensor } from 'imgkit';
+import { resize, metadata, smartCrop, composite, transform, thumbhash, toTensor } from 'imgkit';
 
 const buf = Buffer.from(await Bun.file('photo.jpg').arrayBuffer());
+const logo = Buffer.from(await Bun.file('logo.png').arrayBuffer());
 
 const info = await metadata(buf);                                    // Ultra-fast metadata
 const resized = await resize(buf, { width: 200 });                   // Resize
 const thumb = await smartCrop(buf, { aspectRatio: '1:1' });          // Content-aware crop
+const marked = await composite(buf, {                                // Watermark / overlay
+  layers: [{ input: logo, gravity: 'southEast', opacity: 0.7 }]
+});
 const { dataUrl } = await thumbhash(buf);                            // Placeholder image
 const webp = await transform(buf, {                                  // Full pipeline
   crop: { aspectRatio: '16:9' }, resize: { width: 1280 },
@@ -90,6 +95,7 @@ await resize(buf, { width: 800 }, { signal: ac.signal });
 | `resize()` | Resize with multiple algorithms | ✅ | ✅ |
 | `crop()` | Crop region (zero-copy) | ✅ | ✅ |
 | `smartCrop()` | Content-aware crop | ✅ | ✅ |
+| `composite()` | Overlay / watermark with blend modes | ✅ | ✅ |
 | `dominantColors()` | Extract colors for UI theming | ✅ | ✅ |
 | `thumbnail()` | Fast thumbnail (shrink-on-load) | ✅ | ✅ |
 | `transform()` | Multi-operation pipeline | ✅ | ✅ |

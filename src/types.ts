@@ -242,6 +242,58 @@ export interface TransformOptions {
   exif?: ExifOptions;
 }
 
+// ============================================
+// COMPOSITE / OVERLAY TYPES
+// ============================================
+
+/**
+ * Blend mode for compositing a layer onto the base image.
+ * Follows the W3C separable blend modes.
+ */
+export type BlendMode =
+  | "over" // Normal alpha source-over compositing (default)
+  | "multiply" // Darkens (backdrop × source)
+  | "screen" // Lightens (inverse multiply)
+  | "overlay" // Multiply or screen depending on backdrop
+  | "darken" // Keep the darker of backdrop/source
+  | "lighten" // Keep the lighter of backdrop/source
+  | "add"; // Additive (clamped)
+
+/** A single layer to composite onto the base image. */
+export interface CompositeLayer {
+  /** Encoded image bytes for this layer (JPEG, PNG, WebP, etc.) */
+  input: Buffer;
+  /**
+   * Anchor point used when `left`/`top` are not provided (default: "center").
+   * Use this for watermark-style placement (e.g. "southEast" for bottom-right).
+   */
+  gravity?: CropGravity;
+  /** Absolute X position of the layer's top-left corner (overrides gravity) */
+  left?: number;
+  /** Absolute Y position of the layer's top-left corner (overrides gravity) */
+  top?: number;
+  /** Horizontal offset applied after gravity placement (or tile phase) */
+  offsetX?: number;
+  /** Vertical offset applied after gravity placement (or tile phase) */
+  offsetY?: number;
+  /** Layer opacity 0.0-1.0, multiplied into the layer's alpha (default: 1.0) */
+  opacity?: number;
+  /** Blend mode (default: "over") */
+  blend?: BlendMode;
+  /** Repeat the layer across the whole base image (watermark pattern, default: false) */
+  tile?: boolean;
+  /** Optional resize applied to the layer before compositing (e.g. to scale a logo) */
+  resize?: ResizeOptions;
+}
+
+/** Options for compositing one or more layers onto a base image. */
+export interface CompositeOptions {
+  /** Layers to composite, painted in array order (first = bottom-most overlay) */
+  layers: CompositeLayer[];
+  /** Output format options (default: PNG to preserve alpha) */
+  output?: OutputOptions;
+}
+
 /** Native module options (internal) */
 export interface NapiCropOptions {
   x?: number;
@@ -294,6 +346,24 @@ export interface NapiTransformOptions {
   brightness?: number;
   contrast?: number;
   exif?: NapiExifOptions;
+}
+
+export interface NapiCompositeLayer {
+  input: Buffer;
+  gravity?: string;
+  left?: number;
+  top?: number;
+  offsetX?: number;
+  offsetY?: number;
+  opacity?: number;
+  blend?: string;
+  tile?: boolean;
+  resize?: NapiResizeOptions;
+}
+
+export interface NapiCompositeOptions {
+  layers: NapiCompositeLayer[];
+  output?: NapiOutputOptions;
 }
 
 // ============================================

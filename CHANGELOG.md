@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-06-23
+
+### Added
+
+- **Composite / Overlay / Watermark** - New `composite()` / `compositeSync()` API for painting one or more layers onto a base image
+  - **Placement** — anchor layers by `gravity` (`center`, `north`, `southEast`, …) with optional `offsetX`/`offsetY` nudges, or position precisely with absolute `left`/`top` coordinates (off-canvas / negative positions are clipped automatically)
+  - **Blend modes** — `over` (default), `multiply`, `screen`, `overlay`, `darken`, `lighten`, and `add`, implemented with the W3C Compositing & Blending Level 1 blend-then-source-over formula
+  - **Per-layer opacity** — `opacity` (0.0–1.0) multiplied into the layer's alpha
+  - **Per-layer resize** — scale a layer (e.g. a logo) before compositing via `resize`
+  - **Tiling** — `tile: true` repeats a layer across the whole base for watermark patterns
+  - **Multiple layers** — painted in array order (first = bottom-most overlay)
+  - **Output format** — defaults to PNG (preserves alpha); supports `jpeg`/`png`/`webp` via `output`
+  - Full async support with the existing `timeoutMs` / `AbortSignal` options
+  - Fast paths for fully-transparent source pixels and fully-opaque `over` paints
+  - See [Composite API](/api/composite) and the [Composite & Watermark example](/examples/composite)
+
+---
+
 ## [2.2.1] - 2026-03-21
 
 ### Fixed

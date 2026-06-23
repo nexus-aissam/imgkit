@@ -60,6 +60,9 @@ export type {
   ThumbnailFormat,
   ThumbnailOptions,
   ThumbnailResult,
+  BlendMode,
+  CompositeLayer,
+  CompositeOptions,
   AsyncOptions,
 } from "./types";
 export type { EnhancedTensorResult } from "./api";
@@ -107,6 +110,8 @@ export {
   thumbnailSync,
   thumbnailBuffer,
   thumbnailBufferSync,
+  composite,
+  compositeSync,
 } from "./api";
 
 // Import for version and default export
@@ -162,6 +167,8 @@ import {
   thumbnailSync,
   thumbnailBuffer,
   thumbnailBufferSync,
+  composite,
+  compositeSync,
 } from "./api";
 
 // Default export for convenience
@@ -207,5 +214,7 @@ export default {
   thumbnailSync,
   thumbnailBuffer,
   thumbnailBufferSync,
+  composite,
+  compositeSync,
   version,
 };

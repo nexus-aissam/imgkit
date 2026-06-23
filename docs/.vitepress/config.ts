@@ -59,7 +59,7 @@ export default defineConfig({
       { text: "API", link: "/api/", activeMatch: "/api/" },
       { text: "Examples", link: "/examples/", activeMatch: "/examples/" },
       {
-        text: "v2.2.1",
+        text: "v2.3.0",
         items: [
           { text: "Changelog", link: "/changelog" },
           {
@@ -131,6 +131,7 @@ export default defineConfig({
             { text: "toTensor", link: "/api/tensor" },
             { text: "imageHash", link: "/api/image-hash" },
             { text: "smartCrop", link: "/api/smart-crop" },
+            { text: "composite", link: "/api/composite" },
             { text: "dominantColors", link: "/api/dominant-colors" },
             { text: "thumbnail", link: "/api/thumbnail" },
             { text: "EXIF Metadata", link: "/api/exif" },
@@ -157,6 +158,7 @@ export default defineConfig({
             { text: "ML Tensor Conversion", link: "/examples/tensor" },
             { text: "Perceptual Hashing", link: "/examples/image-hash" },
             { text: "Smart Crop", link: "/examples/smart-crop" },
+            { text: "Composite & Watermark", link: "/examples/composite" },
             { text: "Dominant Colors", link: "/examples/dominant-colors" },
             { text: "Thumbnail Generation", link: "/examples/thumbnail" },
             { text: "API Endpoint", link: "/examples/api-endpoint" },
