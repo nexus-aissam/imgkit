@@ -201,6 +201,14 @@ jobs:
         with:
           bun-version: latest
 
+      # The wasm suite runs under `node --test` (Bun's node:wasi lacks
+      # initialize(), which a napi-rs reactor module needs). Pin Node rather than
+      # relying on whatever the runner preinstalls.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Install Rust (with wasm target)
         uses: dtolnay/rust-toolchain@stable
         with:

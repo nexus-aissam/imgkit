@@ -23,8 +23,8 @@ import { gradientPng, makePng } from "./make-png.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-let imgkit: any;
-let png: Buffer;
+let imgkit;
+let png;
 let onWasm = false;
 
 before(async () => {

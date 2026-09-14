@@ -32,8 +32,8 @@ const WASM_LOADER = join(ROOT, "wasm", "image-turbo.wasi.cjs");
 
 const require = createRequire(join(ROOT, "/"));
 
-let wasm: any;
-let png: Buffer;
+let wasm;
+let png;
 
 before(() => {
   if (!existsSync(WASM_LOADER)) {
@@ -298,7 +298,7 @@ describe("wasm build", () => {
     // napi-rs implements `async fn` on a Tokio runtime that does not currently
     // work on wasm32-wasip1-threads. The raw module therefore rejects every
     // Promise-returning export. src/wasm-shim.ts re-implements them on top of
-    // the sync exports so the public TS API still works; see wasm-shim.test.ts.
+    // the sync exports so the public TS API still works; see shim.test.mjs.
     //
     // This test pins the current upstream behaviour. When napi-rs fixes it,
     // this test fails, which is the signal to delete the shim.
