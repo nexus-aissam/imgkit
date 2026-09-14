@@ -126,7 +126,7 @@
     "bench": "bun run benchmarks/bench.ts",
     "lint": "eslint src",
     "clean": "rm -rf dist wasm *.node npm",
-    "test:wasm": "node --test test/wasm/",
+    "test:wasm": "node --test test/wasm/*.test.mjs",
     "test:rust": "cargo test --lib",
     "test:rust:pure": "cargo test --lib --no-default-features"
   },

@@ -275,7 +275,7 @@ ships.
 ```bash
 bun run build:wasm
 bun run build:ts
-bun run test:wasm     # node --test test/wasm/
+bun run test:wasm     # node --test test/wasm/*.test.mjs
 ```
 
 The WebAssembly suite is hermetic: fixtures are generated in-process by a small
