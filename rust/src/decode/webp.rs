@@ -8,16 +8,24 @@
 //! - Memory scales with OUTPUT size, not INPUT size
 //! - Faster decoding (skips unnecessary pixel processing)
 //! - Multi-threaded decoding via use_threads
+//!
+//! Under `--no-default-features` (pure-Rust / wasm32) libwebp is unavailable,
+//! so decoding falls back to the `image` crate's pure-Rust WebP decoder, which
+//! has no scaled-decode API. See `docs/guide/wasm.md`.
 
+#[allow(unused_imports)]
 use image::{DynamicImage, RgbImage, RgbaImage};
 
 use crate::error::ImageError;
 
 /// Maximum pixel count before we require memory protection (100 megapixels)
+/// The pure-Rust path enforces the same limit inside `decode_with_image_crate_safe`.
+#[allow(dead_code)]
 const MAX_PIXELS_DEFAULT: u64 = 100_000_000;
 
 /// Decode WebP with optional target dimensions for shrink-on-load optimization
 /// When target dimensions are provided, the image is scaled during decode
+#[cfg(feature = "native-codecs")]
 #[inline]
 pub fn decode_webp_with_target(
     data: &[u8],
@@ -152,6 +160,7 @@ pub fn decode_webp_with_target(
 }
 
 /// Calculate scaled dimensions maintaining aspect ratio
+#[allow(dead_code)] // only the native backend scales during decode
 fn calculate_scaled_dimensions(
     src_width: u32,
     src_height: u32,
@@ -178,6 +187,7 @@ fn calculate_scaled_dimensions(
 
 /// Fast WebP decode without scaling (for when no target dimensions provided)
 /// Falls back to the webp crate for simplicity
+#[cfg(feature = "native-codecs")]
 #[inline]
 pub fn decode_webp_fast(data: &[u8]) -> Result<DynamicImage, ImageError> {
     // For non-scaled decodes, use the simpler webp crate
@@ -197,19 +207,63 @@ pub fn decode_webp_fast(data: &[u8]) -> Result<DynamicImage, ImageError> {
         })?;
         Ok(DynamicImage::ImageRgba8(img))
     } else {
-        // WebP decoder returns RGBA, convert to RGB
-        let rgba_data = webp_image.to_vec();
-        let mut rgb_data = Vec::with_capacity((width * height * 3) as usize);
-        for chunk in rgba_data.chunks(4) {
-            rgb_data.push(chunk[0]); // R
-            rgb_data.push(chunk[1]); // G
-            rgb_data.push(chunk[2]); // B
-        }
+        // The `webp` crate decodes to RGB (3 bytes/px) when the image has no
+        // alpha channel, and to RGBA (4 bytes/px) when it does. Branch on the
+        // actual buffer length rather than assuming one layout: assuming RGBA
+        // here previously produced a buffer of the wrong length, so every
+        // WebP without alpha failed to decode.
+        let data_vec = webp_image.to_vec();
+        let rgb_len = (width as usize) * (height as usize) * 3;
+        let rgba_len = (width as usize) * (height as usize) * 4;
+
+        let rgb_data = if data_vec.len() == rgb_len {
+            data_vec
+        } else if data_vec.len() == rgba_len {
+            let mut rgb = Vec::with_capacity(rgb_len);
+            for chunk in data_vec.chunks_exact(4) {
+                rgb.extend_from_slice(&chunk[..3]);
+            }
+            rgb
+        } else {
+            return Err(ImageError::DecodeError(format!(
+                "Unexpected WebP buffer length {} for {}x{} (expected {} for RGB or {} for RGBA)",
+                data_vec.len(),
+                width,
+                height,
+                rgb_len,
+                rgba_len
+            )));
+        };
+
         let img = RgbImage::from_raw(width, height, rgb_data).ok_or_else(|| {
             ImageError::DecodeError("Failed to create RGB image from WebP".to_string())
         })?;
         Ok(DynamicImage::ImageRgb8(img))
     }
+}
+
+// ============================================================
+// Pure-Rust WebP backend (no C dependencies, wasm32-compatible)
+// ============================================================
+
+/// Pure-Rust WebP decode. The `image` crate's WebP decoder has no scaled-decode
+/// API, so the target dimensions are ignored and the caller's resize step does
+/// the downscaling. Content is identical to the native path; only cost differs.
+#[cfg(not(feature = "native-codecs"))]
+#[inline]
+pub fn decode_webp_with_target(
+    data: &[u8],
+    _target_width: Option<u32>,
+    _target_height: Option<u32>,
+) -> Result<DynamicImage, ImageError> {
+    super::generic::decode_with_image_crate_safe(data)
+}
+
+/// Pure-Rust WebP decode via the `image` crate.
+#[cfg(not(feature = "native-codecs"))]
+#[inline]
+pub fn decode_webp_fast(data: &[u8]) -> Result<DynamicImage, ImageError> {
+    super::generic::decode_with_image_crate_safe(data)
 }
 
 #[cfg(test)]
@@ -229,5 +283,54 @@ mod tests {
 
         // No dimensions provided
         assert_eq!(calculate_scaled_dimensions(1000, 500, None, None), (1000, 500));
+    }
+
+    #[test]
+    fn scaled_dimensions_preserve_aspect_ratio_and_never_collapse_to_zero() {
+        // A very wide source scaled to a tiny width must still have >= 1px height.
+        let (w, h) = calculate_scaled_dimensions(4000, 10, Some(2), None);
+        assert_eq!(w, 2);
+        assert!(h >= 1, "height must never round down to 0");
+    }
+
+    #[test]
+    fn webp_round_trip_works_on_both_backends() {
+        // Encode with whichever WebP encoder this build has, then decode it back.
+        // Guards the pure-Rust fallback against silently producing garbage.
+        let src = DynamicImage::ImageRgb8(RgbImage::from_fn(8, 4, |x, y| {
+            image::Rgb([(x * 30) as u8, (y * 60) as u8, 90])
+        }));
+        // Encode losslessly so the assertion is meaningful on both backends:
+        // native honours `lossless`, and the pure-Rust encoder is lossless-only.
+        let opts = crate::WebPOptions { quality: None, lossless: Some(true) };
+        let encoded = crate::encode::encode_webp(&src, Some(&opts)).expect("encode webp");
+        assert!(!encoded.is_empty(), "encoder produced no bytes");
+
+        let decoded = decode_webp_fast(&encoded).expect("decode webp");
+        assert_eq!((decoded.width(), decoded.height()), (8, 4));
+
+        // Regression guard: a no-alpha WebP must survive the round trip with its
+        // pixels intact. The native path used to mis-handle the RGB buffer layout
+        // and fail outright here.
+        let rgb = decoded.to_rgb8();
+        let src_rgb = src.to_rgb8();
+        assert_eq!(
+            rgb.as_raw(),
+            src_rgb.as_raw(),
+            "lossless WebP round trip must be byte-exact"
+        );
+    }
+
+    #[test]
+    fn webp_target_decode_matches_full_decode_dimensions_or_shrinks() {
+        let src = DynamicImage::ImageRgb8(RgbImage::from_fn(16, 16, |x, y| {
+            image::Rgb([(x * 15) as u8, (y * 15) as u8, 0])
+        }));
+        let opts = crate::WebPOptions { quality: None, lossless: Some(true) };
+        let encoded = crate::encode::encode_webp(&src, Some(&opts)).expect("encode webp");
+        let decoded = decode_webp_with_target(&encoded, Some(4), Some(4)).expect("decode webp");
+        // Native shrinks during decode; pure-Rust returns full size. Both are valid.
+        assert!(decoded.width() <= 16 && decoded.width() >= 4);
+        assert!(decoded.height() <= 16 && decoded.height() >= 4);
     }
 }

@@ -151,6 +151,30 @@ pub struct OutputOptions {
   pub webp: Option<WebPOptions>,
 }
 
+/// Which codec backend this binary was built with, and what that implies.
+///
+/// imgkit ships two builds: the default **native** build (libjpeg-turbo + libwebp)
+/// and a C-free **pure-rust** build used for the WebAssembly target. They expose
+/// the same API but differ in performance and in one output detail (lossy WebP).
+/// Read this at runtime instead of guessing from `process.platform`.
+#[napi(object)]
+pub struct CodecBackend {
+  /// `"native"` (libjpeg-turbo + libwebp) or `"pure-rust"` (image crate only).
+  pub backend: String,
+  /// Whether this build runs as WebAssembly rather than a native addon.
+  pub wasm: bool,
+  /// Whether JPEG/WebP decoding can shrink *during* decode. When false,
+  /// thumbnailing still works but decodes at full resolution first, so it is
+  /// slower and uses more memory on large inputs.
+  pub shrink_on_load: bool,
+  /// Whether WebP can be encoded lossily at a chosen quality.
+  /// When false, WebP output is always lossless and `quality` has no effect,
+  /// so files are larger than a native lossy encode.
+  pub webp_lossy_encode: bool,
+  /// Whether HEIC/HEIF decoding is available in this build.
+  pub heic: bool,
+}
+
 /// Image metadata (similar to sharp's output)
 #[napi(object)]
 pub struct ImageMetadata {

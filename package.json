@@ -9,8 +9,12 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "devDependencies": {
+    "@emnapi/core": "^1.11.3",
+    "@emnapi/runtime": "^1.11.3",
     "@napi-rs/cli": "^3.5.1",
+    "@napi-rs/wasm-runtime": "^1.2.4",
     "@types/bun": "latest",
+    "emnapi": "^1.11.3",
     "sharp": "^0.34.5",
     "tsup": "^8.4.0",
     "typescript": "^5.9.0"
@@ -86,8 +90,19 @@
       "aarch64-pc-windows-msvc",
       "x86_64-unknown-linux-gnu",
       "aarch64-unknown-linux-gnu",
-      "x86_64-unknown-linux-musl"
-    ]
+      "x86_64-unknown-linux-musl",
+      "wasm32-wasip1-threads"
+    ],
+    "wasm": {
+      "initialMemory": 4000,
+      "maximumMemory": 65536,
+      "browser": {
+        "fs": false,
+        "asyncInit": false,
+        "buffer": true,
+        "errorEvent": true
+      }
+    }
   },
   "scripts": {
     "build": "napi build --platform --release",

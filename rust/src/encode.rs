@@ -1,5 +1,13 @@
 //! Image encoding functions - optimized for performance
-//! Uses turbojpeg (libjpeg-turbo with SIMD) for fastest JPEG encoding
+//!
+//! Two backends, selected by the `native-codecs` cargo feature:
+//!
+//! - **native** (default): turbojpeg (libjpeg-turbo with SIMD) for JPEG and
+//!   libwebp for WebP, including lossy WebP at a chosen quality.
+//! - **pure-rust** (`--no-default-features`): the `image` crate's encoders.
+//!   Portable (builds for wasm32). NOTE: `image`'s WebP encoder is
+//!   **lossless-only**, so `quality` is not honoured for WebP on this backend
+//!   and files are larger. JPEG quality is honoured. See `docs/guide/wasm.md`.
 
 use image::{DynamicImage, GenericImageView, ImageEncoder, ExtendedColorType};
 use image::codecs::png::{PngEncoder, CompressionType, FilterType};
@@ -9,6 +17,7 @@ use crate::{JpegOptions, PngOptions, WebPOptions};
 
 /// Encode image to JPEG - optimized using turbojpeg (libjpeg-turbo with SIMD)
 /// 2-6x faster than pure Rust encoders thanks to SSE2/AVX2/NEON
+#[cfg(feature = "native-codecs")]
 #[inline(always)]
 pub fn encode_jpeg(img: &DynamicImage, options: Option<&JpegOptions>) -> Result<Vec<u8>, ImageError> {
   let quality = options.and_then(|o| o.quality).unwrap_or(80) as i32;
@@ -86,6 +95,7 @@ pub fn encode_png(img: &DynamicImage, options: Option<&PngOptions>) -> Result<Ve
 }
 
 /// Encode image to WebP - optimized to avoid unnecessary clones
+#[cfg(feature = "native-codecs")]
 #[inline(always)]
 pub fn encode_webp(img: &DynamicImage, options: Option<&WebPOptions>) -> Result<Vec<u8>, ImageError> {
   let quality = options.and_then(|o| o.quality).unwrap_or(80) as f32;
@@ -115,6 +125,59 @@ pub fn encode_webp(img: &DynamicImage, options: Option<&WebPOptions>) -> Result<
   };
 
   Ok(webp_data.to_vec())
+}
+
+// ============================================================
+// Pure-Rust encoders (no C dependencies, wasm32-compatible)
+// ============================================================
+
+/// Pure-Rust JPEG encode via the `image` crate. Honours `quality` (1-100).
+#[cfg(not(feature = "native-codecs"))]
+#[inline(always)]
+pub fn encode_jpeg(img: &DynamicImage, options: Option<&JpegOptions>) -> Result<Vec<u8>, ImageError> {
+  let quality = options.and_then(|o| o.quality).unwrap_or(80) as u8;
+  let quality = quality.clamp(1, 100);
+
+  let rgb = img.to_rgb8();
+  let (width, height) = (rgb.width(), rgb.height());
+
+  let mut output: Vec<u8> = Vec::new();
+  let encoder =
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, quality);
+  encoder
+    .write_image(&rgb, width, height, ExtendedColorType::Rgb8)
+    .map_err(|e| ImageError::EncodeError(format!("JPEG encode failed: {}", e)))?;
+
+  Ok(output)
+}
+
+/// Pure-Rust WebP encode via the `image` crate.
+///
+/// `image`'s WebP encoder only supports **lossless** output, so the `quality`
+/// option is not applicable on this backend and the result will be larger than
+/// a libwebp lossy encode at the same visual fidelity. `lossless: false` is
+/// accepted rather than rejected so that existing code keeps working, but the
+/// bytes produced are lossless either way. Callers that need to detect this can
+/// read `codecBackend().webpLossyEncode`.
+#[cfg(not(feature = "native-codecs"))]
+#[inline(always)]
+pub fn encode_webp(img: &DynamicImage, _options: Option<&WebPOptions>) -> Result<Vec<u8>, ImageError> {
+  let (width, height) = img.dimensions();
+  let mut output: Vec<u8> = Vec::new();
+
+  if img.color().has_alpha() {
+    let rgba = img.to_rgba8();
+    image::codecs::webp::WebPEncoder::new_lossless(&mut output)
+      .write_image(&rgba, width, height, ExtendedColorType::Rgba8)
+      .map_err(|e| ImageError::EncodeError(format!("WebP encode failed: {}", e)))?;
+  } else {
+    let rgb = img.to_rgb8();
+    image::codecs::webp::WebPEncoder::new_lossless(&mut output)
+      .write_image(&rgb, width, height, ExtendedColorType::Rgb8)
+      .map_err(|e| ImageError::EncodeError(format!("WebP encode failed: {}", e)))?;
+  }
+
+  Ok(output)
 }
 
 /// Encode image to specified format based on OutputOptions

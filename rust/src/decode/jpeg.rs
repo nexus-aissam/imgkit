@@ -1,13 +1,24 @@
 //! JPEG decoding with shrink-on-load optimization
 //!
-//! Uses turbojpeg (libjpeg-turbo with SIMD) for maximum decode speed.
-//! Supports scale-on-decode for massive performance gains when downscaling.
+//! Two backends, selected by the `native-codecs` cargo feature:
+//!
+//! - **native** (default): turbojpeg (libjpeg-turbo with SIMD). Supports
+//!   scale-on-decode for massive performance gains when downscaling.
+//! - **pure-rust** (`--no-default-features`): the `image` crate's zune-jpeg
+//!   backend. Portable (builds for wasm32), but has **no scaled-decode API**,
+//!   so shrink-on-load degrades to a full-resolution decode. Output is
+//!   correct either way; only the decode cost differs.
 
+#[allow(unused_imports)] // RgbImage is used by the native backend and by tests
 use image::{DynamicImage, RgbImage};
 
 use crate::error::ImageError;
 
+#[allow(unused_imports)]
+use super::generic::decode_with_image_crate_safe;
+
 /// JPEG shrink-on-load using turbojpeg (libjpeg-turbo with SIMD)
+#[allow(dead_code)] // convenience wrapper; the native decode path calls the _mode variant
 /// This decodes JPEG at reduced resolution - THE key optimization
 /// Much faster than mozjpeg because turbojpeg uses SIMD (SSE2/AVX2/NEON)
 /// Scale factors: 1/8, 1/4, 3/8, 1/2, 5/8, 3/4, 7/8, 1/1
@@ -21,6 +32,7 @@ pub fn decode_jpeg_with_shrink(
 
 /// JPEG shrink-on-load with fast mode option
 /// Fast mode uses more aggressive scaling for maximum speed
+#[cfg(feature = "native-codecs")]
 pub fn decode_jpeg_with_shrink_mode(
   data: &[u8],
   target_width: Option<u32>,
@@ -80,6 +92,7 @@ pub fn decode_jpeg_with_shrink_mode(
 /// Calculate optimal JPEG scale factor for shrink-on-load
 /// Returns (numerator, denominator) for turbojpeg ScalingFactor
 /// Uses same logic as sharp/libvips for optimal quality
+#[allow(dead_code)] // scale factors only drive the native (turbojpeg) decode path
 pub fn calculate_jpeg_scale_factor(
   src_width: u32,
   src_height: u32,
@@ -91,6 +104,7 @@ pub fn calculate_jpeg_scale_factor(
 
 /// Calculate JPEG scale factor with optional fast mode
 /// Fast mode uses more aggressive scaling for maximum speed
+#[allow(dead_code)] // scale factors only drive the native (turbojpeg) decode path
 pub fn calculate_jpeg_scale_factor_with_mode(
   src_width: u32,
   src_height: u32,
@@ -149,6 +163,7 @@ pub fn calculate_jpeg_scale_factor_with_mode(
 }
 
 /// Fast JPEG dimension extraction from header
+#[allow(dead_code)] // header fast-path is a native-decode optimisation
 pub fn get_jpeg_dimensions_fast(data: &[u8]) -> Result<(u32, u32), ImageError> {
   let mut pos = 2; // Skip SOI
   let limit = data.len().min(65536);
@@ -192,6 +207,7 @@ pub fn get_jpeg_dimensions_fast(data: &[u8]) -> Result<(u32, u32), ImageError> {
 
 /// Fast JPEG decoding using turbojpeg (libjpeg-turbo with SIMD)
 /// 2-6x faster than pure Rust decoders thanks to SSE2/AVX2/NEON
+#[cfg(feature = "native-codecs")]
 #[inline]
 pub fn decode_jpeg_fast(data: &[u8]) -> Result<DynamicImage, ImageError> {
   // Use turbojpeg for maximum decode speed
@@ -205,4 +221,94 @@ pub fn decode_jpeg_fast(data: &[u8]) -> Result<DynamicImage, ImageError> {
     .ok_or_else(|| ImageError::DecodeError("Failed to create image from decoded data".to_string()))?;
 
   Ok(DynamicImage::ImageRgb8(img))
+}
+
+// ============================================================
+// Pure-Rust JPEG backend (no C dependencies, wasm32-compatible)
+// ============================================================
+
+/// Pure-Rust JPEG decode with shrink-on-load *requested* but not available.
+///
+/// zune-jpeg (the `image` crate's JPEG backend) exposes no scaled-decode API,
+/// so this decodes at full resolution and lets the caller's resize step do the
+/// downscaling. The returned image is identical in content to the native path;
+/// only the decode cost differs. See `docs/guide/wasm.md`.
+#[cfg(not(feature = "native-codecs"))]
+pub fn decode_jpeg_with_shrink_mode(
+  data: &[u8],
+  _target_width: Option<u32>,
+  _target_height: Option<u32>,
+  _fast_mode: bool,
+) -> Result<DynamicImage, ImageError> {
+  decode_with_image_crate_safe(data)
+}
+
+/// Pure-Rust full-resolution JPEG decode via the `image` crate (zune-jpeg).
+#[cfg(not(feature = "native-codecs"))]
+#[inline]
+pub fn decode_jpeg_fast(data: &[u8]) -> Result<DynamicImage, ImageError> {
+  decode_with_image_crate_safe(data)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// A 3x2 baseline JPEG, generated at test time so the suite needs no network
+  /// and no fixture files (the existing bun suite fetches from picsum.photos).
+  fn tiny_jpeg() -> Vec<u8> {
+    let img = DynamicImage::ImageRgb8(RgbImage::from_fn(3, 2, |x, y| {
+      image::Rgb([(x * 80) as u8, (y * 120) as u8, 200])
+    }));
+    crate::encode::encode_jpeg(&img, None).expect("encode tiny jpeg")
+  }
+
+  #[test]
+  fn header_dimensions_match_decoded_dimensions() {
+    let data = tiny_jpeg();
+    let (w, h) = get_jpeg_dimensions_fast(&data).expect("parse SOF");
+    assert_eq!((w, h), (3, 2));
+
+    // The header fast-path must agree with a real decode on both backends.
+    let img = decode_jpeg_fast(&data).expect("decode");
+    assert_eq!((img.width(), img.height()), (w, h));
+  }
+
+  #[test]
+  fn shrink_decode_produces_usable_image_on_both_backends() {
+    let data = tiny_jpeg();
+    // Ask for a downscale. Native shrinks during decode; pure-Rust returns full
+    // size. Either way the result must be a valid, non-empty image.
+    let img = decode_jpeg_with_shrink_mode(&data, Some(1), Some(1), false).expect("decode");
+    assert!(img.width() >= 1 && img.height() >= 1);
+    assert!(img.width() <= 3 && img.height() <= 2);
+  }
+
+  #[test]
+  fn scale_factor_is_conservative_in_normal_mode() {
+    // These are pure arithmetic and must behave identically on every backend.
+    assert_eq!(calculate_jpeg_scale_factor(800, 600, Some(100), None), (1, 8));
+    assert_eq!(calculate_jpeg_scale_factor(800, 600, Some(200), None), (1, 4));
+    assert_eq!(calculate_jpeg_scale_factor(800, 600, Some(400), None), (1, 2));
+    assert_eq!(calculate_jpeg_scale_factor(800, 600, Some(800), None), (1, 1));
+    // No target = full resolution
+    assert_eq!(calculate_jpeg_scale_factor(800, 600, None, None), (1, 1));
+  }
+
+  #[test]
+  fn fast_mode_shrinks_at_least_as_aggressively_as_normal() {
+    for target in [50u32, 100, 200, 400, 700] {
+      let (_, normal_d) = calculate_jpeg_scale_factor_with_mode(800, 600, Some(target), None, false);
+      let (_, fast_d) = calculate_jpeg_scale_factor_with_mode(800, 600, Some(target), None, true);
+      assert!(
+        fast_d >= normal_d,
+        "fast mode must never decode more pixels than normal mode (target {target}: fast 1/{fast_d} vs normal 1/{normal_d})"
+      );
+    }
+  }
+
+  #[test]
+  fn rejects_data_that_is_not_a_jpeg() {
+    assert!(get_jpeg_dimensions_fast(&[0u8; 64]).is_err());
+  }
 }
