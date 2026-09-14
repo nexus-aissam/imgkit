@@ -44,7 +44,7 @@
 - **ML Tensor Conversion** (SIMD)
 - **EXIF metadata** read/write
 - **Timeout & AbortSignal** support
-- **WebAssembly build** (browser & edge)
+- **WebAssembly** fallback build
 
 </td>
 </tr>
@@ -117,19 +117,19 @@ All async functions support `{ timeoutMs?, signal? }` for timeout & cancellation
 
 ## WebAssembly
 
-imgkit also runs in the browser, on edge runtimes, and on any platform without a
-prebuilt binary. The WebAssembly build is compiled from the same Rust source as
-the native addon, so there is no second implementation to drift out of sync.
+imgkit now runs on platforms with no prebuilt binary. Under Node the loader tries
+every native strategy first and falls back to WebAssembly only if none succeeds,
+so you keep the fast path automatically and an unsupported platform degrades
+instead of throwing at import.
 
-```typescript
-// Same import. Bundlers resolve the `browser` export condition to the wasm build.
-import { resize, metadata, codecBackend } from 'imgkit';
+The wasm build is compiled from the same Rust source as the native addon, so
+there is no second implementation to drift out of sync.
 
-const thumb = await resize(buf, { width: 400 });
-```
-
-On Node the loader tries every native strategy first and only falls back to
-WebAssembly if none succeeds, so you keep the fast path automatically.
+> **Browser & edge support is not finished.** The `.wasm` module and both loaders
+> ship in the package, but the browser entry point is still to be built, so
+> `import 'imgkit'` does not yet work in a bundle. See the
+> [WebAssembly guide](https://nexus-aissam.github.io/imgkit/guide/wasm) for what
+> is and is not available.
 
 Because the wasm build swaps the C codecs (libjpeg-turbo, libwebp) for pure-Rust
 ones, a few things differ. Check at runtime rather than guessing:
@@ -162,7 +162,7 @@ bun run test:wasm
 
 **Formats:** JPEG (TurboJPEG/SIMD), PNG, WebP, GIF, BMP, TIFF (read), HEIC/AVIF (macOS ARM64)
 
-**Platforms:** macOS (ARM64, x64) · Linux (x64 glibc/musl, ARM64) · Windows (x64, ARM64) · **WebAssembly** (browsers, edge runtimes, any other platform)
+**Platforms:** macOS (ARM64, x64) · Linux (x64 glibc/musl, ARM64) · Windows (x64, ARM64) · **WebAssembly** fallback (Node, any other platform)
 
 ## Development
 

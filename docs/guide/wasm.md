@@ -1,22 +1,27 @@
 # WebAssembly
 
-imgkit ships a WebAssembly build alongside the native addon, so the same API runs
-in browsers, edge runtimes, and on any platform without a prebuilt binary.
+imgkit ships a WebAssembly build alongside the native addon. Under Node it is
+used automatically on any platform that has no prebuilt binary, so an
+unsupported platform degrades instead of failing at import.
 
 It is compiled from the same Rust source as the native addon — there is no second
 implementation to drift out of sync — but it swaps the C codecs for pure-Rust
 ones. That costs some speed and changes one output detail. Both differences are
 detectable at runtime, and this page documents all of them.
 
+Browser and edge support is **not** finished: the artifacts ship, but the entry
+point that would make `import 'imgkit'` work in a bundle is
+[still to be built](#browser-and-edge-runtimes-not-wired-up-yet).
+
 ## Why you might want it
 
-- **Browsers.** Resize, crop and compress client-side before upload. Cuts upload
-  time and bandwidth, and the original never leaves the device.
-- **Edge runtimes.** Cloudflare Workers, Deno Deploy and Vercel Edge cannot load
-  native addons at all.
 - **Unsupported platforms.** FreeBSD, Linux ARMv7, musl ARM64 and anything else
-  without a prebuilt binary now degrade to WebAssembly instead of failing.
-- **Reproducible builds.** No `nasm`, no `cmake`, no C toolchain.
+  without a prebuilt binary now degrade to WebAssembly instead of failing, rather
+  than throwing at import time. ✅ available now
+- **Reproducible builds.** No `nasm`, no `cmake`, no C toolchain. ✅ available now
+- **Browsers** — client-side resize before upload. ⚠️ artifacts ship, but the
+  browser entry point is not wired up yet; see below.
+- **Edge runtimes** — Cloudflare Workers, Deno Deploy. ⚠️ untested; see below.
 
 If you are on macOS, Linux or Windows under Node or Bun, you do not need this —
 the native addon is loaded automatically and is faster.
@@ -32,13 +37,6 @@ if all of them fail:
 
 So the fast path is automatic and the fallback is silent-but-inspectable — call
 `codecBackend()` if you need to know which one you got.
-
-In browsers and bundlers, the package's `browser` export condition points
-directly at the WebAssembly build, so step 1–2 never happen:
-
-```json
-"exports": { ".": { "browser": "./wasm/browser.js" } }
-```
 
 ## Checking which backend you got
 
@@ -65,109 +63,38 @@ const opts = codecBackend().webpLossyEncode
   : { format: 'jpeg', jpeg: { quality: 75 } }; // JPEG honours quality everywhere
 ```
 
-## Browser usage
+## Browser and edge runtimes: not wired up yet
 
-### Vite
-
-Vite resolves the `browser` condition automatically. WebAssembly and worker files
-need to be served as assets, and the page must be cross-origin isolated for
-shared memory:
-
-```ts
-// vite.config.ts
-export default {
-  optimizeDeps: { exclude: ['imgkit'] },
-  server: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
-  },
-};
-```
-
-```typescript
-import { resize, metadata } from 'imgkit';
-
-const file = input.files[0];
-const buf = Buffer.from(await file.arrayBuffer());
-
-const info = await metadata(buf);
-const thumb = await resize(buf, { width: 800 });
-
-await fetch('/upload', { method: 'POST', body: new Blob([thumb]) });
-```
-
-::: warning Cross-origin isolation
-The module is built for `wasm32-wasip1-threads` and uses `SharedArrayBuffer`.
-Browsers only expose that on cross-origin isolated pages, which means serving
-both COOP and COEP headers as above. Without them the module will fail to
-instantiate.
+::: warning Status
+This release ships the WebAssembly **artifacts** and the **Node fallback**, both
+verified. It does **not** yet ship a working browser entry point. If you `import
+imgkit` in a browser bundle today, it will not work.
 :::
 
-### webpack 5
+napi-rs generates `wasm/browser.js` as `export * from 'imgkit-wasm32-wasi'` — a
+separate npm package this repo does not publish. Even with that package, the
+entry re-exports the **raw** napi module, which would bypass imgkit's TypeScript
+layer: the option converters (so `gravity: 'southEast'` never becomes the
+`SouthEast` the Rust side expects) and the async shim described below.
 
-```js
-module.exports = {
-  experiments: { asyncWebAssembly: true },
-  resolve: { fallback: { fs: false, path: false } },
-};
-```
+Rather than ship a `browser` export condition that resolves to something broken,
+it has been left out. Wiring it up properly means building a real browser entry
+that instantiates `wasm/image-turbo.wasi-browser.js`, applies the async shim, and
+re-exports the `src/api/*` surface — tracked as follow-up work.
 
-### Next.js
+What you *can* rely on today:
 
-Run it client-side only — the wasm module should not be pulled into a server
-bundle:
+- Node, on any platform with no prebuilt native addon, automatically falls back
+  to WebAssembly. Verified by installing the packed tarball into a clean project.
+- The crate builds with zero C dependencies (`--no-default-features`), which is
+  what makes any of this possible.
+- The `.wasm` module and both loaders are published in the package, so anyone
+  wiring a browser or edge integration has the artifacts to do it.
 
-```tsx
-const ImageTools = dynamic(() => import('../components/ImageTools'), {
-  ssr: false,
-});
-```
-
-## Run it in a Web Worker
-
-On WebAssembly the work happens on the calling thread (see
-[Async functions](#async-functions-run-on-the-calling-thread) below), so a large
-image will block the UI. Put imgkit in a worker:
-
-```typescript
-// worker.ts
-import { resize } from 'imgkit';
-
-self.onmessage = async (e) => {
-  const out = await resize(Buffer.from(e.data.buf), { width: 1024 });
-  self.postMessage(out, [out.buffer]);
-};
-```
-
-```typescript
-// main.ts
-const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
-worker.postMessage({ buf: await file.arrayBuffer() });
-worker.onmessage = (e) => showPreview(new Blob([e.data]));
-```
-
-## Edge runtimes
-
-Cloudflare Workers, Deno Deploy and similar runtimes have no filesystem and no
-native addon support, so the WebAssembly build is the only option:
-
-```typescript
-import { resize, toJpeg } from 'imgkit';
-
-export default {
-  async fetch(req: Request) {
-    const buf = Buffer.from(await req.arrayBuffer());
-    const out = await toJpeg(await resize(buf, { width: 600 }), { quality: 80 });
-    return new Response(out, { headers: { 'content-type': 'image/jpeg' } });
-  },
-};
-```
-
-Mind the platform limits: the module is ~3.2 MB, which counts against Workers'
-bundle size, and image work is CPU-heavy relative to Workers' CPU-time budget.
-Resize small, and prefer JPEG output.
+Edge runtimes (Cloudflare Workers, Deno Deploy) are **untested**. Note that
+`wasm/image-turbo.wasi.cjs` requires `node:worker_threads` and `node:fs`, which
+Workers do not provide even with `nodejs_compat`, so that path likely needs the
+browser loader plus a custom entry rather than the Node one.
 
 ## What differs from the native build
 
@@ -225,9 +152,8 @@ const out = await resize(buf, { width: 800 }); // ✅ resolves
 ```
 
 But the work happens on the calling thread rather than a worker, so it does not
-yield to the event loop. In a browser, use a
-[Web Worker](#run-it-in-a-web-worker). On a server, be aware that a large image
-will block that isolate for the duration.
+yield to the event loop. On a server, be aware that a large image will block
+that isolate for the duration.
 
 ### `timeoutMs` is rejected, not ignored
 
@@ -283,8 +209,10 @@ use the native build.
 ## Troubleshooting
 
 **`SharedArrayBuffer is not defined`**
-The page is not cross-origin isolated. Serve `Cross-Origin-Opener-Policy: same-origin`
-and `Cross-Origin-Embedder-Policy: require-corp`.
+The module is built for `wasm32-wasip1-threads` and uses shared memory. In a
+browser that requires a cross-origin isolated page (`Cross-Origin-Opener-Policy:
+same-origin` plus `Cross-Origin-Embedder-Policy: require-corp`) — but see the
+browser status note above before going further.
 
 **`symbol exported via --export not found: emnapi_create_env`**
 Your emnapi is on the 1.x line. The build needs `emnapi@2.0.0-alpha.x` — see

@@ -6,11 +6,12 @@ All notable changes to imgkit.
 
 ### Added
 
-- **WebAssembly build** - imgkit now runs in browsers, edge runtimes and on platforms without a prebuilt native addon (Issue #12)
+- **WebAssembly build** - imgkit now runs on platforms with no prebuilt native addon (Issue #12)
   - Compiled from the same Rust source as the native addon for `wasm32-wasip1-threads` via napi-rs/emnapi
-  - `bun run build:wasm` emits to `wasm/`; `browser` export condition points bundlers at it automatically
-  - `src/loader.ts` falls back to WebAssembly after every native strategy, so an unsupported platform degrades instead of throwing
+  - `bun run build:wasm` emits to `wasm/`; the module and both loaders ship in the package
+  - `src/loader.ts` falls back to WebAssembly after every native strategy, so an unsupported platform degrades instead of throwing at import. Verified by installing the packed tarball into a clean project.
   - New `codecBackend()` reports the loaded backend and its capabilities at runtime
+  - **Browser and edge support is not finished.** The artifacts ship, but the browser entry point is still to be built, so `import 'imgkit'` does not yet work in a bundle. napi's generated `browser.js` re-exports an unpublished package and would bypass the TypeScript layer, so no `browser` export condition is advertised.
   - See the [WebAssembly guide](/guide/wasm) for the full trade-off table
 
 - **`native-codecs` cargo feature** - the C codecs (libjpeg-turbo, libwebp) are now optional
