@@ -6,15 +6,15 @@ import {
   stripExifSync,
   toWebp,
 } from "../../src";
+import { gradientPng } from "../helpers/make-png.mjs";
 
 let testImage: Buffer;
 
 beforeAll(async () => {
-  // Download a small test image
-  const response = await fetch(
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/200px-PNG_transparency_demonstration_1.png"
-  );
-  const pngBuffer = Buffer.from(await response.arrayBuffer());
+  // Generate the fixture in-process rather than downloading one. The previous
+  // fixture came from upload.wikimedia.org, which now returns HTTP 400, so the
+  // whole suite failed while decoding an HTML error page.
+  const pngBuffer = gradientPng(200, 150);
 
   // Convert to JPEG for EXIF tests (need JPEG format)
   const { toJpeg } = await import("../../src");
