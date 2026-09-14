@@ -64,6 +64,7 @@ export type {
   CompositeLayer,
   CompositeOptions,
   AsyncOptions,
+  CodecBackend,
 } from "./types";
 export type { EnhancedTensorResult } from "./api";
 
@@ -116,12 +117,31 @@ export {
 
 // Import for version and default export
 import { native } from "./loader";
+import type { CodecBackend } from "./types";
 
 /**
  * Get library version
  */
 export function version(): string {
   return native.version();
+}
+
+/**
+ * Report which codec backend is actually loaded.
+ *
+ * imgkit ships a native addon (libjpeg-turbo + libwebp) and a WebAssembly
+ * build (pure Rust). They share this API but differ in speed and in one output
+ * detail, so check here rather than guessing from `process.platform`:
+ *
+ * ```typescript
+ * const b = codecBackend();
+ * if (!b.webpLossyEncode) {
+ *   // WebP output is lossless here and `quality` has no effect.
+ * }
+ * ```
+ */
+export function codecBackend(): CodecBackend {
+  return native.codecBackend();
 }
 
 // Import functions for default export
@@ -217,4 +237,5 @@ export default {
   composite,
   compositeSync,
   version,
+  codecBackend,
 };

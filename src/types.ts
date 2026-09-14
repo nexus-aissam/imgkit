@@ -629,3 +629,33 @@ export interface AsyncOptions {
   /** AbortSignal for cancellation. Operation rejects when signal is aborted. */
   signal?: AbortSignal;
 }
+
+/**
+ * Which codec backend is actually loaded, and what that implies.
+ *
+ * imgkit ships a native addon (libjpeg-turbo + libwebp) and a WebAssembly build
+ * (pure Rust, no C dependencies). They expose the same API but differ in speed
+ * and in one output detail, so read this at runtime rather than inferring the
+ * backend from `process.platform`.
+ *
+ * @see https://github.com/nexus-aissam/imgkit/blob/main/docs/guide/wasm.md
+ */
+export interface CodecBackend {
+  /** `"native"` (libjpeg-turbo + libwebp) or `"pure-rust"` (image crate only). */
+  backend: "native" | "pure-rust";
+  /** Whether this build runs as WebAssembly rather than a native addon. */
+  wasm: boolean;
+  /**
+   * Whether JPEG/WebP decoding can shrink *during* decode. When false,
+   * thumbnailing still works but decodes at full resolution first, so it is
+   * slower and uses more memory on large inputs.
+   */
+  shrinkOnLoad: boolean;
+  /**
+   * Whether WebP can be encoded lossily at a chosen quality. When false, WebP
+   * output is always lossless and `quality` has no effect, so files are larger.
+   */
+  webpLossyEncode: boolean;
+  /** Whether HEIC/HEIF decoding is available in this build. */
+  heic: boolean;
+}

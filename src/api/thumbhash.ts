@@ -5,6 +5,7 @@
  * more visually pleasing placeholders compared to BlurHash.
  */
 
+import { deflateSync } from "zlib";
 import type { ThumbHashResult, ThumbHashDecodeResult, AsyncOptions } from "../types";
 import { native } from "../loader";
 import { withAbortSignal } from "../abort";
@@ -37,8 +38,11 @@ function rgbaToDataUrl(rgba: Buffer, width: number, height: number): string {
     }
   }
 
-  const zlib = require("zlib");
-  const compressed = zlib.deflateSync(rawData, { level: 9 });
+  // Static import: a dynamic require() here is rewritten by tsup into a
+  // "Dynamic require is not supported" throw in the ESM bundle, which broke
+  // thumbhash() for every Node ESM consumer. Bun tolerates require-in-ESM,
+  // which is why the existing bun-only suite never caught it.
+  const compressed = deflateSync(rawData, { level: 9 });
 
   const chunks: Buffer[] = [signature];
   chunks.push(createChunk("IHDR", ihdr));

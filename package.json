@@ -9,18 +9,19 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "devDependencies": {
-    "@emnapi/core": "^1.11.3",
-    "@emnapi/runtime": "^1.11.3",
-    "@napi-rs/cli": "^3.5.1",
+    "@emnapi/core": "2.0.0-alpha.5",
+    "@emnapi/runtime": "2.0.0-alpha.5",
+    "@napi-rs/cli": "^3.9.1",
     "@napi-rs/wasm-runtime": "^1.2.4",
     "@types/bun": "latest",
-    "emnapi": "^1.11.3",
+    "emnapi": "2.0.0-alpha.5",
     "sharp": "^0.34.5",
     "tsup": "^8.4.0",
     "typescript": "^5.9.0"
   },
   "exports": {
     ".": {
+      "browser": "./wasm/browser.js",
       "import": {
         "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
@@ -42,7 +43,8 @@
     "imgkit-build": "./dist/bin/imgkit-build.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "wasm"
   ],
   "homepage": "https://nexus-aissam.github.io/imgkit/",
   "keywords": [
@@ -109,6 +111,7 @@
     "build:debug": "napi build --platform",
     "build:ts": "tsup src/index.ts src/bin/imgkit-build.ts --format cjs,esm --dts --clean",
     "build:all": "bun run build && bun run build:ts",
+    "build:wasm": "napi build --platform --release --target wasm32-wasip1-threads --no-default-features --output-dir wasm",
     "artifacts": "napi artifacts",
     "version": "napi version",
     "test": "bun test test/local",
@@ -121,7 +124,11 @@
     "test:all": "bun run test:local && bun run test:packages",
     "bench": "bun run benchmarks/bench.ts",
     "lint": "eslint src",
-    "clean": "rm -rf dist *.node npm"
+    "clean": "rm -rf dist wasm *.node npm",
+    "test:wasm": "node --test test/wasm/",
+    "test:rust": "cargo test --lib",
+    "test:rust:pure": "cargo test --lib --no-default-features"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "browser": "./wasm/browser.js"
 }
