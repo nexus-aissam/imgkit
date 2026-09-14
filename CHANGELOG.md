@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-09-14
+
+### Added
+
+- **WebAssembly build** - imgkit now runs in browsers, edge runtimes and on platforms without a prebuilt native addon (Issue #12)
+  - Compiled from the same Rust source as the native addon for `wasm32-wasip1-threads` via napi-rs/emnapi
+  - `bun run build:wasm` emits to `wasm/`; `browser` export condition points bundlers at it automatically
+  - `src/loader.ts` falls back to WebAssembly after every native strategy, so an unsupported platform degrades instead of throwing
+  - New `codecBackend()` reports the loaded backend and its capabilities at runtime
+  - See the [WebAssembly guide](/guide/wasm) for the full trade-off table
+
+- **`native-codecs` cargo feature** - the C codecs (libjpeg-turbo, libwebp) are now optional
+  - `--no-default-features` builds with pure-Rust codecs and zero C dependencies, so the crate builds without nasm/cmake
+  - This is what makes the WebAssembly target possible
+
+### Fixed
+
+- **`thumbhash()` was broken in the ESM build on Node** - `src/api/thumbhash.ts` used `require("zlib")` inside a module bundled to ESM, which tsup rewrote into a "Dynamic require is not supported" throw. Bun tolerates require-in-ESM, so the bun-only test suite asserted `dataUrl` and still passed. Now a static import.
+- **WebP images without an alpha channel failed to decode** via `decode_webp_fast`. The code assumed the `webp` crate always returns RGBA, but it returns RGB (3 bytes/px) when there is no alpha, so the RGBA->RGB conversion built a buffer of the wrong length and every such decode failed with "Failed to create RGB image from WebP". The existing suite missed it because its WebP tests all pass target dimensions, which route through a different decoder.
+
+### Known limitations (WebAssembly only)
+
+- WebP output is **lossless only** (`image` has no lossy WebP encoder), so `quality` has no effect. JPEG quality is honoured.
+- No shrink-on-load, so thumbnailing decodes at full resolution first.
+- Async functions run on the calling thread, and `timeoutMs` is rejected rather than silently dropped.
+- Requires Node; Bun's `node:wasi` lacks `initialize()`. Bun users get the faster native addon anyway.
+- Requires `emnapi@2.0.0-alpha.x`; the 1.x line cannot link against `napi-build` 2.4.2.
+
+---
+
 ## [2.3.0] - 2026-06-23
 
 ### Added
