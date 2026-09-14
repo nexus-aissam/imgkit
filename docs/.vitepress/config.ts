@@ -59,7 +59,7 @@ export default defineConfig({
       { text: "API", link: "/api/", activeMatch: "/api/" },
       { text: "Examples", link: "/examples/", activeMatch: "/examples/" },
       {
-        text: "v2.3.0",
+        text: "v2.4.0",
         items: [
           { text: "Changelog", link: "/changelog" },
           {
@@ -106,6 +106,7 @@ export default defineConfig({
           items: [
             { text: "ML Tensor Conversion", link: "/guide/tensor" },
             { text: "Performance", link: "/guide/performance" },
+            { text: "WebAssembly", link: "/guide/wasm" },
             { text: "Architecture", link: "/guide/architecture" },
             { text: "Async vs Sync", link: "/guide/async-sync" },
             { text: "Error Handling", link: "/guide/error-handling" },

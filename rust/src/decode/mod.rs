@@ -1,9 +1,17 @@
 //! Image decoding module - optimized for performance
 //!
-//! Uses turbojpeg (libjpeg-turbo with SIMD) for fastest JPEG decode.
-//! Uses mozjpeg for shrink-on-load when downscaling (decode at reduced resolution).
-//! Uses libwebp for WebP shrink-on-load (decode directly to target resolution).
-//! Uses libheif for HEIC/HEIF decoding (iPhone photos) - optional feature.
+//! Backend selection is driven by the `native-codecs` cargo feature (on by default):
+//!
+//! - **native**: turbojpeg (libjpeg-turbo with SIMD) for fastest JPEG decode, with
+//!   scale-on-decode; libwebp for WebP shrink-on-load (decode directly to target
+//!   resolution).
+//! - **pure-rust** (`--no-default-features`): the `image` crate's codecs. No C
+//!   dependencies, so the crate builds for `wasm32-wasip1-threads`. Neither backend
+//!   crate exposes scaled decode, so shrink-on-load degrades to a full decode plus
+//!   resize - same output, more work. See `docs/guide/wasm.md`.
+//!
+//! Uses libheif for HEIC/HEIF decoding (iPhone photos) - optional `heic` feature,
+//! native-only.
 
 mod generic;
 mod heic;
@@ -17,6 +25,7 @@ use crate::metadata;
 
 pub use generic::decode_with_image_crate_safe;
 pub use heic::decode_heic_with_target;
+#[allow(unused_imports)] // decode_jpeg_with_shrink is a native-path convenience wrapper
 pub use jpeg::{decode_jpeg_fast, decode_jpeg_with_shrink, decode_jpeg_with_shrink_mode};
 pub use webp::{decode_webp_fast, decode_webp_with_target};
 

@@ -483,6 +483,22 @@ pub fn version() -> String {
   env!("CARGO_PKG_VERSION").to_string()
 }
 
+/// Report which codec backend this binary was built with.
+///
+/// Lets callers detect at runtime that they are on the WebAssembly / pure-Rust
+/// build, where WebP output is lossless-only and shrink-on-load is unavailable,
+/// rather than discovering it from surprising output.
+#[napi]
+pub fn codec_backend() -> CodecBackend {
+  CodecBackend {
+    backend: if cfg!(feature = "native-codecs") { "native" } else { "pure-rust" }.to_string(),
+    wasm: cfg!(target_arch = "wasm32"),
+    shrink_on_load: cfg!(feature = "native-codecs"),
+    webp_lossy_encode: cfg!(feature = "native-codecs"),
+    heic: cfg!(feature = "heic"),
+  }
+}
+
 // ============================================
 // SMART CROP FUNCTIONS
 // ============================================

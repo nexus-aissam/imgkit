@@ -12,6 +12,7 @@ import { existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
+import { applyWasmAsyncShim } from "./wasm-shim";
 
 // Detect Bun runtime
 const isBun = typeof Bun !== "undefined";
@@ -186,6 +187,36 @@ export function loadNativeBinding(): any {
         continue;
       }
     }
+  }
+
+  // Strategy 5: fall back to the WebAssembly build (issue #12).
+  //
+  // The wasm module runs anywhere - unsupported platforms, edge runtimes, and
+  // browsers via the `browser` entry point - so it is a better outcome than
+  // throwing. It is tried last because it is meaningfully slower than the
+  // native addon and cannot decode HEIC; see docs/guide/wasm.md.
+  const WASM_LOADER = "image-turbo.wasi.cjs";
+  const wasmCandidates = [
+    // Published layout: dist/ and wasm/ are siblings in the package root.
+    join(currentDir, "..", "wasm", WASM_LOADER),
+    // Running straight from the repo root.
+    join(process.cwd(), "wasm", WASM_LOADER),
+    // Separately published wasm package.
+    join(currentDir, "..", "..", "imgkit-wasm32-wasi", WASM_LOADER),
+  ];
+  for (const wasmPath of wasmCandidates) {
+    try {
+      if (existsSync(wasmPath)) {
+        return applyWasmAsyncShim(nativeRequire!(wasmPath));
+      }
+    } catch (e) {
+      errors.push(`WASM ${wasmPath}: ${(e as Error).message}`);
+    }
+  }
+  try {
+    return applyWasmAsyncShim(nativeRequire!("imgkit-wasm32-wasi"));
+  } catch (e) {
+    errors.push(`Package imgkit-wasm32-wasi: ${(e as Error).message}`);
   }
 
   // Build helpful error message

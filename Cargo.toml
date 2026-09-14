@@ -1,6 +1,6 @@
 [package]
 name = "image-turbo"
-version = "2.3.0"
+version = "2.4.0"
 edition = "2021"
 license = "MIT"
 authors = ["Aissam Irhir <aissamirhir@gmail.com>"]
@@ -16,26 +16,26 @@ napi = { version = "3.8.2", features = ["async", "napi8"] }
 napi-derive = "3.5.1"
 
 # Image processing
-image = { version = "0.25", default-features = false, features = ["png", "gif", "webp", "bmp", "ico", "tiff"] }
+image = { version = "0.25", default-features = false, features = ["png", "gif", "webp", "bmp", "ico", "tiff", "jpeg"] }
 fast_image_resize = { version = "5", features = ["image", "rayon"] }
 
 # TurboJPEG - libjpeg-turbo bindings (THE fastest JPEG codec with SIMD)
 # Uses SSE2/AVX2/NEON for 2-6x faster encode/decode than pure Rust
-turbojpeg = { version = "1.3", features = ["image"] }
+turbojpeg = { version = "1.3", features = ["image"], optional = true }
 
 # MozJPEG - for shrink-on-load support (decode at reduced resolution)
 # Fallback for shrink-on-load since turbojpeg doesn't support it
-mozjpeg = "0.10"
+mozjpeg = { version = "0.10", optional = true }
 
 # Multi-threading
 rayon = "1.10"
 
 # WebP support
-webp = "0.3"
+webp = { version = "0.3", optional = true }
 
 # Low-level libwebp bindings for shrink-on-load optimization
 # Enables use_scaling for decoding directly to target resolution
-libwebp-sys2 = "0.1"
+libwebp-sys2 = { version = "0.1", optional = true }
 
 # Async runtime
 tokio = { version = "1", features = ["rt", "sync", "time"] }
@@ -67,8 +67,15 @@ img-parts = "0.3"
 libheif-rs = { version = "2.5", default-features = false, features = ["v1_17", "embedded-libheif"], optional = true }
 
 [features]
-default = []
-heic = ["libheif-rs"]
+default = ["native-codecs"]
+
+# Native C codecs: libjpeg-turbo (SIMD) + libwebp.
+# Fastest path, but requires nasm/cmake at build time and cannot target WebAssembly.
+# Disable with --no-default-features to get a pure-Rust, C-free build (see docs/guide/wasm.md).
+native-codecs = ["dep:turbojpeg", "dep:mozjpeg", "dep:webp", "dep:libwebp-sys2"]
+
+# HEIC/HEIF decoding via libheif. Native-only (C library), macOS ARM64 in CI.
+heic = ["dep:libheif-rs"]
 
 [build-dependencies]
 napi-build = "2.3.1"

@@ -44,6 +44,7 @@
 - **ML Tensor Conversion** (SIMD)
 - **EXIF metadata** read/write
 - **Timeout & AbortSignal** support
+- **WebAssembly** fallback build
 
 </td>
 </tr>
@@ -104,6 +105,7 @@ await resize(buf, { width: 800 }, { signal: ac.signal });
 | `toTensor()` | ML tensor (SIMD-accelerated) | ✅ | ✅ |
 | `imageHash()` / `imageHashDistance()` | Perceptual hashing | ✅ | ✅ |
 | `writeExif()` / `stripExif()` | EXIF metadata | ✅ | ✅ |
+| `codecBackend()` | Which backend is loaded & its capabilities | — | ✅ |
 
 All async functions support `{ timeoutMs?, signal? }` for timeout & cancellation. All have sync variants (`resizeSync()`, etc.).
 
@@ -113,17 +115,75 @@ All async functions support `{ timeoutMs?, signal? }` for timeout & cancellation
   <a href="https://nexus-aissam.github.io/imgkit/api/timeout"><img src="https://img.shields.io/badge/Timeout_&_Cancellation-6366f1?style=for-the-badge&logo=clock&logoColor=white" alt="Timeout & Cancellation" /></a>
 </p>
 
+## WebAssembly
+
+imgkit now runs on platforms with no prebuilt binary. Under Node the loader tries
+every native strategy first and falls back to WebAssembly only if none succeeds,
+so you keep the fast path automatically and an unsupported platform degrades
+instead of throwing at import.
+
+The wasm build is compiled from the same Rust source as the native addon, so
+there is no second implementation to drift out of sync.
+
+> **Browser & edge support is not finished.** The `.wasm` module and both loaders
+> ship in the package, but the browser entry point is still to be built, so
+> `import 'imgkit'` does not yet work in a bundle. See the
+> [WebAssembly guide](https://nexus-aissam.github.io/imgkit/guide/wasm) for what
+> is and is not available.
+
+Because the wasm build swaps the C codecs (libjpeg-turbo, libwebp) for pure-Rust
+ones, a few things differ. Check at runtime rather than guessing:
+
+```typescript
+const b = codecBackend();
+// { backend: 'pure-rust', wasm: true,
+//   shrinkOnLoad: false, webpLossyEncode: false, heic: false }
+```
+
+| | Native | WebAssembly |
+|---|---|:---:|
+| Shrink-on-load (fast thumbnails) | ✅ | ❌ |
+| Lossy WebP encode (`quality`) | ✅ | ❌ lossless only |
+| HEIC/HEIF decode | ✅ | ❌ |
+| Async runs off-thread | ✅ | ❌ |
+| Everything else | ✅ | ✅ |
+
+JPEG quality *is* honoured on both. Full details, including the `timeoutMs`
+caveat and why the wasm build needs Node rather than Bun, are in the
+[WebAssembly guide](https://nexus-aissam.github.io/imgkit/guide/wasm).
+
+```bash
+rustup target add wasm32-wasip1-threads
+bun run build:wasm        # outputs to wasm/
+bun run test:wasm
+```
+
 ## Formats & Platforms
 
 **Formats:** JPEG (TurboJPEG/SIMD), PNG, WebP, GIF, BMP, TIFF (read), HEIC/AVIF (macOS ARM64)
 
-**Platforms:** macOS (ARM64, x64) · Linux (x64 glibc/musl, ARM64) · Windows (x64, ARM64)
+**Platforms:** macOS (ARM64, x64) · Linux (x64 glibc/musl, ARM64) · Windows (x64, ARM64) · **WebAssembly** fallback (Node, any other platform)
 
 ## Development
 
 ```bash
 git clone https://github.com/nexus-aissam/imgkit.git && cd imgkit
 bun install && bun run build && bun run build:ts && bun test
+```
+
+Building the native addon needs `nasm`, `cmake` and `pkg-config` (for
+libjpeg-turbo). The WebAssembly build needs none of them:
+
+```bash
+rustup target add wasm32-wasip1-threads
+bun run build:wasm && bun run build:ts && bun run test:wasm
+```
+
+Rust unit tests run under both codec backends:
+
+```bash
+bun run test:rust         # native codecs (libjpeg-turbo + libwebp)
+bun run test:rust:pure    # pure-Rust codecs (what WebAssembly uses)
 ```
 
 ## License

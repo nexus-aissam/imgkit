@@ -188,10 +188,61 @@ jobs:
           path: "*.node"
           if-no-files-found: error
 
+  wasm:
+    name: WebAssembly
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Rust (with wasm target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1-threads
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: wasm-cargo-${{ hashFiles('Cargo.toml') }}
+
+      - name: Install dependencies
+        run: bun install
+
+      # The whole point of the `native-codecs` feature: this must succeed with
+      # no nasm, no cmake and no C toolchain installed on the runner.
+      - name: Crate builds with zero C dependencies
+        run: cargo check --no-default-features
+
+      - name: Rust unit tests (pure-Rust codec backend)
+        run: cargo test --lib --no-default-features
+
+      - name: Build WebAssembly
+        run: bun run build:wasm
+
+      - name: Build TypeScript
+        run: bun run build:ts
+
+      # Runs under `node --test`: Bun's node:wasi lacks initialize(), which a
+      # napi-rs reactor module needs. See docs/guide/wasm.md.
+      - name: Run WebAssembly tests
+        run: bun run test:wasm
+
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      - build
+      - wasm
 
     steps:
       - uses: actions/checkout@v4
@@ -204,6 +255,16 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Install Rust (with wasm target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1-threads
+
+      # wasm/ ships inside the main package (package.json "files"), so it has to
+      # be built before publish or the WebAssembly fallback is missing.
+      - name: Build WebAssembly
+        run: npx napi build --platform --release --target wasm32-wasip1-threads --no-default-features --output-dir wasm
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4

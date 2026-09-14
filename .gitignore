@@ -6,6 +6,11 @@ dist/
 *.node
 target/
 
+# WebAssembly binaries (rebuilt by `bun run build:wasm`).
+# The small generated JS loaders in wasm/ are committed, mirroring how the
+# napi-generated index.js is committed while *.node is not.
+wasm/*.wasm
+
 # Logs
 *.log
 
