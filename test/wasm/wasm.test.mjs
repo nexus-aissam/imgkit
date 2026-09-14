@@ -25,7 +25,7 @@ import { createRequire } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { gradientPng, makePng } from "./make-png.mjs";
+import { gradientPng, makePng } from "../helpers/make-png.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const WASM_LOADER = join(ROOT, "wasm", "image-turbo.wasi.cjs");

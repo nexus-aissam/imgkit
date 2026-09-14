@@ -19,7 +19,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { gradientPng, makePng } from "./make-png.mjs";
+import { gradientPng, makePng } from "../helpers/make-png.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
