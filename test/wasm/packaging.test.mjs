@@ -22,7 +22,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const WASM_DIR = join(ROOT, "wasm");
 
-let pkg: any;
+let pkg;
 
 before(() => {
   pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
@@ -35,7 +35,7 @@ describe("packaging", () => {
       if (!existsSync(loader)) return; // not built; wasm.test.ts reports that
 
       const src = readFileSync(loader, "utf8");
-      const required = new Set<string>();
+      const required = new Set();
       for (const m of src.matchAll(/require\(['"]([^'"]+)['"]\)/g)) {
         const id = m[1];
         if (id.startsWith(".") || id.startsWith("node:")) continue;
@@ -68,7 +68,7 @@ describe("packaging", () => {
 
   describe("published files", () => {
     it("ships the wasm module and its loaders", () => {
-      const files: string[] = pkg.files ?? [];
+      const files = pkg.files ?? [];
       const joined = files.join("\n");
       assert.ok(joined.includes("image-turbo.wasm32-wasi.wasm"), "wasm module must ship");
       assert.ok(joined.includes("image-turbo.wasi.cjs"), "node loader must ship");
@@ -77,7 +77,7 @@ describe("packaging", () => {
 
     it("does not ship the debug wasm", () => {
       // Same bytes as the release module plus DWARF - it doubled the tarball.
-      const files: string[] = pkg.files ?? [];
+      const files = pkg.files ?? [];
       assert.ok(
         !files.some((f) => f.includes("debug.wasm")),
         "the debug .wasm must not be published"
@@ -110,7 +110,7 @@ describe("packaging", () => {
       const cargo = readFileSync(join(ROOT, "Cargo.toml"), "utf8");
       const m = cargo.match(/^version\s*=\s*"([^"]+)"/m);
       assert.ok(m, "Cargo.toml has a package version");
-      assert.equal(m![1], pkg.version, "Cargo.toml and package.json versions must match");
+      assert.equal(m[1], pkg.version, "Cargo.toml and package.json versions must match");
     });
 
     it("pins optionalDependencies to the current version", () => {

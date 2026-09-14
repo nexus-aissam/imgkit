@@ -280,6 +280,8 @@ bun run test:wasm     # node --test test/wasm/
 
 The WebAssembly suite is hermetic: fixtures are generated in-process by a small
 PNG encoder, so it needs no network access and no binary files in the repository.
+The files are plain `.mjs` rather than `.ts` so they run on any Node >= 18
+without depending on Node's built-in TypeScript stripping.
 It covers the raw wasm module, the public API through `dist/`, `codecBackend()`,
 and both documented degradations.
 
